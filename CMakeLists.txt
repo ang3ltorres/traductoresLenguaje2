@@ -22,3 +22,4 @@ function(add_python_lib TARGET_NAME LIB_NAME)
 endfunction()
 
 add_python_lib(01_analizador_lexico lexico)
+add_program(03_sintactico)
