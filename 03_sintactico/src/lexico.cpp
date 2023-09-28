@@ -1,8 +1,11 @@
 #include "lexico.hpp"
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <regex>
 #include <cmath>
+
+using StringNumber = std::pair<std::string, unsigned int>;
 
 const std::vector<std::pair<std::string, std::string>> token_types =
 {
@@ -106,177 +109,187 @@ static bool valid_id(const std::string& nombre)
 	return std::regex_match(nombre, pattern);
 }
 
-static std::vector<std::string> split_strings(const std::string& code)
+static std::vector<StringNumber> splitCode(const std::string& code)
 {
-	std::vector<std::string> v;
-	std::istringstream stream(code);
-	std::string aux;
-	char c;
+	std::vector<StringNumber> v, v_aux;
+	std::string string_aux;
 
-	while (stream.get(c))
+	/*** Enumerar lineas ***/
+	std::stringstream ss(code);
+	for (unsigned int line = 1; std::getline(ss, string_aux); line++)
+		v_aux.push_back({string_aux, line});
+	
+	v = v_aux;
+	v_aux.clear();
+
+	/*** Separar strings del resto ***/
+	for (unsigned int line = 0; line < v.size();)
 	{
-		if (c == '"')
-		{
-			if (!aux.empty())
-			{
-				v.push_back(aux);
-				aux.clear();
-			}
+		string_aux.clear();
 
-			while (stream.get(c))
+		for (unsigned int index = 0; index < v[line].first.size(); index++)
+		{
+			char c = v[line].first[index];
+
+			if (c != '"')
+				string_aux += c;
+			else
 			{
-				if (c == '"')
-					break;
-				aux += c;
+				// Agregar aux
+				if (!string_aux.empty())
+					v_aux.push_back({string_aux, v[line].second});
+
+				// Concatenar hasta encontrar el otro "
+				string_aux.clear();
+
+				for (index = index + 1; line < v.size();)
+				{
+					if (index < v[line].first.size())
+					{
+						c = v[line].first[index];
+						if (c != '"')
+						{
+							string_aux += c;
+							index++;
+						}
+						else
+						{
+							v_aux.push_back({'\"' + string_aux + '\"', v[line].second});
+							string_aux.clear();
+							break;
+						}
+					}
+					else
+					{
+						string_aux += '\n';
+						line++;
+						index = 0;
+					}
+				}
 			}
-			v.push_back('"' + aux + '"');
-			aux.clear();
 		}
-		else
-			aux += c;
+
+		if (!string_aux.empty())
+		{
+			v_aux.push_back({string_aux, v[line].second});
+			line++;
+		}
 	}
 
-	if (!aux.empty())
-		v.push_back(aux);
+	v = v_aux;
+	v_aux.clear();
 
-	return v;
-}
-
-static void split_white_spaces(std::vector<std::string>& words)
-{
-	std::vector<std::string> v;
-
-	for (const std::string& word : words)
+	/*** Separar espacios en blanco ***/
+	for (const auto& i : v)
 	{
 		// Ignorar strings
-		if (word.front() == '"')
+		if (i.first.front() == '"')
 		{
-			v.push_back(word);
+			v_aux.push_back(i);
 			continue;
 		}
 
-		std::istringstream iss(word);
+		std::istringstream iss(i.first);
 		std::string token;
 		
-		while (iss >> token)
-			v.push_back(token);
+		while (iss >> string_aux)
+			v_aux.push_back({string_aux, i.second});
 	}
 
-	words = v;
-}
+	v = v_aux;
+	v_aux.clear();
 
-static void split_separators(std::vector<std::string>& words)
-{
-	std::vector<std::string> v;
-
-	for (const std::string& word : words)
+	/*** Dividir separadores ***/
+	for (const auto& i : v)
 	{
 		// Ignorar strings
-		if (word.front() == '"')
+		if (i.first.front() == '"')
 		{
-			v.push_back(word);
+			v_aux.push_back(i);
 			continue;
 		}
 
-		std::string aux;
-		for (char c : word)
+		string_aux.clear();
+		for (char c : i.first)
 		{
 			if (is_separator(c))
 			{
-				if (!aux.empty())
+				if (!string_aux.empty())
 				{
-					v.push_back(aux);
-					aux.clear();
+					v_aux.push_back({string_aux, i.second});
+					string_aux.clear();
 				}
-				v.push_back(std::string(1, c));
+				v_aux.push_back({std::string(1, c), i.second});
 			}
 			else
-				aux += c;
+				string_aux += c;
 		}
-		if (!aux.empty())
-			v.push_back(aux);
+		if (!string_aux.empty())
+			v_aux.push_back({string_aux, i.second});
 	}
 
-	words = v;
-}
+	v = v_aux;
+	v_aux.clear();
 
-static void split_operators(std::vector<std::string>& words)
-{
-	std::vector<std::string> v;
-
-	for (const std::string& word : words)
+	/*** Separar operadores ***/
+	for (const auto& i : v)
 	{
 		// Ignorar strings
-		if (word.front() == '"')
+		if (i.first.front() == '"')
 		{
-			v.push_back(word);
+			v_aux.push_back(i);
 			continue;
 		}
 
-		std::string aux;
-
-		for (auto it = word.begin(); it != word.end(); it++)
+		string_aux.clear();
+		for (auto it = i.first.begin(); it != i.first.end(); it++)
 		{
 			if (is_operator(*it))
 			{
-				if (!aux.empty())
+				if (!string_aux.empty())
 				{
-					v.push_back(aux);
-					aux.clear();
+					v_aux.push_back({string_aux, i.second});
+					string_aux.clear();
 				}
-				aux += *it;
+				string_aux += *it;
 
-				// Concatenar a aux todos los caracteres operadores
-				for (it = it + 1; it != word.end() && is_operator(*it); it++)
-					aux += *it;
+				// Concatenar a string_aux todos los caracteres operadores
+				for (it = it + 1; it != i.first.end() && is_operator(*it); it++)
+					string_aux += *it;
 				
 				// Regresar al caracter que no es operador
 				it--;
 
-				v.push_back(aux);
-				aux.clear();
+				v_aux.push_back({string_aux, i.second});
+				string_aux.clear();
 			}
 			else
-				aux += *it;
+				string_aux += *it;
 
 		}
-		if (!aux.empty())
-			v.push_back(aux);
+		if (!string_aux.empty())
+			v_aux.push_back({string_aux, i.second});
 	}
 
-	words = v;
-};
+	v = v_aux;
+	v_aux.clear();
 
-static std::vector<std::string> split(const std::string& code)
-{
-	std::vector<std::string> words = split_strings(code);
-	split_white_spaces(words);
-	split_separators(words);
-	split_operators(words);
-	return words;
-}
-
-
-std::ostream& operator<<(std::ostream& os, const Token& token)
-{
-	os << "TOKEN: " << token_types[static_cast<int>(token.type)].second << "\t\tLEXEMA: " << token.lexema;
-	return os;
+	return v;
 }
 
 std::vector<Token> getTokens(const std::string& code)
 {
-	auto words = split(code);
+	auto words = splitCode(code);
 
 	std::vector<Token> tokens;
 	for (const auto& w : words)
 	{
-
 		// Buscar
 		bool found = false;
 		int index = 0;
 		for (const auto& i : token_types)
 		{
-			if (i.first == w)
+			if (i.first == w.first)
 				{found = true; break;}
 			index++;
 		}
@@ -284,16 +297,22 @@ std::vector<Token> getTokens(const std::string& code)
 		int tipo_numero;
 
 		if (found)
-			tokens.push_back(Token{static_cast<Token::Type>(index), w});
-		else if (w.front() == '"')
-			tokens.push_back(Token{Token::Type::Cadena, w});
-		else if (valid_id(w))
-			tokens.push_back(Token{Token::Type::Identificador, w});
-		else if ((tipo_numero = valid_number(w)) != 0)
-			tokens.push_back(Token{(tipo_numero == 1) ? Token::Type::Numero : Token::Type::NumeroFlotante, w});
+			tokens.push_back(Token{static_cast<Token::Type>(index), w.first, w.second});
+		else if (w.first.front() == '"')
+			tokens.push_back(Token{Token::Type::Cadena, w.first, w.second});
+		else if (valid_id(w.first))
+			tokens.push_back(Token{Token::Type::Identificador, w.first, w.second});
+		else if ((tipo_numero = valid_number(w.first)) != 0)
+			tokens.push_back(Token{(tipo_numero == 1) ? Token::Type::Numero : Token::Type::NumeroFlotante, w.first, w.second});
 		else
-			tokens.push_back(Token{Token::Type::Desconocido, w});
+			tokens.push_back(Token{Token::Type::Desconocido, w.first, w.second});
 	}
 
 	return tokens;
+}
+
+std::ostream& operator<<(std::ostream& os, const Token& token)
+{
+	os << "TOKEN: " << token_types[static_cast<int>(token.type)].second << "\t\tLEXEMA: " << token.lexema << "\t\tLINE: " << token.line;
+	return os;
 }
