@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <format>
 #include <regex>
 #include <cmath>
 
@@ -119,8 +120,8 @@ static std::vector<StringNumber> splitCode(const std::string& code)
 	for (unsigned int line = 1; std::getline(ss, string_aux); line++)
 		v_aux.push_back({string_aux, line});
 	
-	v = v_aux;
-	v_aux.clear();
+	v.clear();
+	v.swap(v_aux);
 
 	/*** Separar strings del resto ***/
 	for (unsigned int line = 0; line < v.size();)
@@ -176,8 +177,8 @@ static std::vector<StringNumber> splitCode(const std::string& code)
 		}
 	}
 
-	v = v_aux;
-	v_aux.clear();
+	v.clear();
+	v.swap(v_aux);
 
 	/*** Separar espacios en blanco ***/
 	for (const auto& i : v)
@@ -196,8 +197,8 @@ static std::vector<StringNumber> splitCode(const std::string& code)
 			v_aux.push_back({string_aux, i.second});
 	}
 
-	v = v_aux;
-	v_aux.clear();
+	v.clear();
+	v.swap(v_aux);
 
 	/*** Dividir separadores ***/
 	for (const auto& i : v)
@@ -228,8 +229,8 @@ static std::vector<StringNumber> splitCode(const std::string& code)
 			v_aux.push_back({string_aux, i.second});
 	}
 
-	v = v_aux;
-	v_aux.clear();
+	v.clear();
+	v.swap(v_aux);
 
 	/*** Separar operadores ***/
 	for (const auto& i : v)
@@ -271,8 +272,8 @@ static std::vector<StringNumber> splitCode(const std::string& code)
 			v_aux.push_back({string_aux, i.second});
 	}
 
-	v = v_aux;
-	v_aux.clear();
+	v.clear();
+	v.swap(v_aux);
 
 	return v;
 }
@@ -313,6 +314,9 @@ std::vector<Token> getTokens(const std::string& code)
 
 std::ostream& operator<<(std::ostream& os, const Token& token)
 {
-	os << "TOKEN: " << token_types[static_cast<int>(token.type)].second << "\t\tLEXEMA: " << token.lexema << "\t\tLINE: " << token.line;
+	// os << "TOKEN: " << token_types[static_cast<int>(token.type)].second << "\t\tLEXEMA: " << token.lexema << "\t\tLINE: " << token.line;
+	// return os;
+
+	os << std::format("Token: {:<32s}Lexema: {:<24s}Linea: {:d}", token_types[static_cast<int>(token.type)].second, token.lexema, token.line);
 	return os;
 }
