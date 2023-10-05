@@ -113,6 +113,7 @@ std::shared_ptr<ASTNode> Parser::parseFactor()
 			return parseNumber();
 		else if (token.type == Token::Type::ParentesisAbre)
 		{
+			index++; // Saltarnos el (
 			std::shared_ptr<ASTNode> expression = parseExpression();
 			if (index < tokens.size() && tokens[index].type == Token::Type::ParentesisCierra)
 			{
@@ -145,5 +146,5 @@ std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 			throw std::runtime_error("Se esperaba un punto y coma.");
 	}
 	
-	throw std::runtime_error("Se esperaba un operador de asignación.");
+	throw std::runtime_error("Se esperaba un operador de asignacion.");
 }
