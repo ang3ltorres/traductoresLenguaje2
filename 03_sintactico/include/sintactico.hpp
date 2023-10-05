@@ -3,6 +3,8 @@
 #include <memory>
 #include <vector>
 
+#include "lexico.hpp"
+
 struct ASTNode
 {
 	enum class Type : int
@@ -17,40 +19,41 @@ struct ASTNode
 		BinaryExpression,
 	};
 
-	ASTNode(ASTNode::Type type, unsigned int lineNumber);
-
 	Type type;
 	unsigned int lineNumber;
 };
 
 struct NodeIdentifier: public ASTNode
 {
-	NodeIdentifier(ASTNode::Type type, unsigned int lineNumber, const std::string& name);
+	NodeIdentifier(unsigned int line, const std::string& name);
 	std::string name;
 };
 
 struct NodeNumber: public ASTNode
 {
-	NodeNumber(ASTNode::Type type, unsigned int lineNumber, int value);
+	NodeNumber(unsigned int line, int value);
 	int value;
 };
 
 struct NodeExpression: public ASTNode
 {
-	NodeExpression(ASTNode::Type type, unsigned int lineNumber, std::shared_ptr<ASTNode> t);
+	NodeExpression(std::shared_ptr<ASTNode> term);
+
 	// Term, BinaryExpression
 	std::shared_ptr<ASTNode> term;
 };
 
-struct NodeTerm: public ASTNode
+struct NodeTerm : public ASTNode
 {
+	NodeTerm(std::shared_ptr<ASTNode> factor);
+
 	// Factor, BinaryExpression
 	std::shared_ptr<ASTNode> factor;
 };
 
-struct NodeBinaryExpression: public ASTNode
+struct NodeBinaryExpression : public ASTNode
 {
-	enum class Operation: int
+	enum class Operation : int
 	{
 		Addition = 0,
 		Subtraction,
@@ -58,27 +61,48 @@ struct NodeBinaryExpression: public ASTNode
 		Division,
 	};
 
-	NodeBinaryExpression(ASTNode::Type type, unsigned int lineNumber, Operation operation, std::shared_ptr<ASTNode> l, std::shared_ptr<ASTNode> r);
-	
+	NodeBinaryExpression(Operation operation, std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> right);
 	Operation operation;
 	std::shared_ptr<ASTNode> left;
 	std::shared_ptr<ASTNode> right;
 };
 
-struct NodeFactor: public ASTNode
+struct NodeFactor : public ASTNode
 {
+	NodeFactor(std::shared_ptr<ASTNode> factor);
+
 	// Identifier, Number, Expression
 	std::shared_ptr<ASTNode> factor;
 };
 
-struct NodeAssignment: public ASTNode
+struct NodeAssignment : public ASTNode
 {
-	NodeAssignment(ASTNode::Type type, unsigned int lineNumber, std::shared_ptr<NodeIdentifier> v);
-	std::shared_ptr<NodeIdentifier> var;
+	NodeAssignment(std::shared_ptr<ASTNode> var, std::shared_ptr<ASTNode> exp);
+	std::shared_ptr<ASTNode> var;
+	std::shared_ptr<ASTNode> exp;
 };
 
-struct NodeProgram: public ASTNode
+struct NodeProgram : public ASTNode
 {
-	NodeProgram(ASTNode::Type type, unsigned int lineNumber, std::vector<std::shared_ptr<NodeAssignment>> nodeAssignment);
+	NodeProgram(std::vector<std::shared_ptr<NodeAssignment>> node);
 	std::vector<std::shared_ptr<NodeAssignment>> node;
+};
+
+class Parser
+{
+public:
+	Parser(const std::vector<Token>& tokens);
+
+	const std::vector<Token>& tokens;
+	size_t index;
+
+	std::shared_ptr<NodeProgram> parseProgram();
+	Token getNextToken();
+
+	std::shared_ptr<NodeIdentifier> parseIdentifier();
+	std::shared_ptr<NodeNumber> parseNumber();
+	std::shared_ptr<ASTNode> parseExpression();
+	std::shared_ptr<ASTNode> parseTerm();
+	std::shared_ptr<ASTNode> parseFactor();
+	std::shared_ptr<NodeAssignment> parseAssignment();
 };
