@@ -121,7 +121,7 @@ std::shared_ptr<ASTNode> Parser::parseFactor()
 				return expression;
 			}
 			else
-				throw std::runtime_error("Se esperaba un paréntesis de cierre.");
+				throw std::runtime_error("Se esperaba un parentesis de cierre.");
 		}
 	}
 
