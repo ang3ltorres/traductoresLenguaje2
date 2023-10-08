@@ -51,7 +51,7 @@ Token Parser::getNextToken()
 std::shared_ptr<NodeIdentifier> Parser::parseIdentifier()
 {
 	Token t = getNextToken();
-	if (t.type == Token::Type::Identificador)
+	if (t.type == Token::Type::Identifier)
 		return std::make_shared<NodeIdentifier>(t.line, t.lexema);
 	else
 		throw std::runtime_error("Se esperaba un identificador.");
@@ -60,7 +60,7 @@ std::shared_ptr<NodeIdentifier> Parser::parseIdentifier()
 std::shared_ptr<NodeNumber> Parser::parseNumber()
 {
 	Token t = getNextToken();
-	if (t.type == Token::Type::Numero)
+	if (t.type == Token::Type::Number)
 		return std::make_shared<NodeNumber>(t.line, std::stoi(t.lexema));
 	else
 		throw std::runtime_error("Se esperaba un numero.");
@@ -69,13 +69,13 @@ std::shared_ptr<NodeNumber> Parser::parseNumber()
 std::shared_ptr<ASTNode> Parser::parseExpression()
 {
 	std::shared_ptr<ASTNode> leftTerm = parseTerm();
-	if (notEnd() && (tokens[index].type == Token::Type::OperacionSuma || tokens[index].type == Token::Type::OperacionResta))
+	if (notEnd() && (tokens[index].type == Token::Type::Addition || tokens[index].type == Token::Type::Subtraction))
 	{
 		Token op = getNextToken();
 		std::shared_ptr<ASTNode> rightTerm = parseExpression();
 		return std::make_shared<NodeBinaryExpression>
 		(
-			(op.type == Token::Type::OperacionSuma) ? NodeBinaryExpression::Operation::Addition : NodeBinaryExpression::Operation::Subtraction,
+			(op.type == Token::Type::Addition) ? NodeBinaryExpression::Operation::Addition : NodeBinaryExpression::Operation::Subtraction,
 			leftTerm,
 			rightTerm
 		);
@@ -88,13 +88,13 @@ std::shared_ptr<ASTNode> Parser::parseTerm()
 {
 	std::shared_ptr<ASTNode> factor = parseFactor();
 
-	if (notEnd() && (tokens[index].type == Token::Type::OperacionMultiplicacion || tokens[index].type == Token::Type::OperacionDivision))
+	if (notEnd() && (tokens[index].type == Token::Type::Multiplication || tokens[index].type == Token::Type::Division))
 	{
 		Token op = getNextToken();
 		std::shared_ptr<ASTNode> right = parseTerm();
 		return std::make_shared<NodeBinaryExpression>
 		(
-			(op.type == Token::Type::OperacionMultiplicacion) ? NodeBinaryExpression::Operation::Multiplication : NodeBinaryExpression::Operation::Division,
+			(op.type == Token::Type::Multiplication) ? NodeBinaryExpression::Operation::Multiplication : NodeBinaryExpression::Operation::Division,
 			factor,
 			right
 		);
@@ -109,15 +109,15 @@ std::shared_ptr<ASTNode> Parser::parseFactor()
 	{
 		Token token = tokens[index];
 
-		if (token.type == Token::Type::Identificador)
+		if (token.type == Token::Type::Identifier)
 			return parseIdentifier();
-		else if (token.type == Token::Type::Numero)
+		else if (token.type == Token::Type::Number)
 			return parseNumber();
-		else if (token.type == Token::Type::ParentesisAbre)
+		else if (token.type == Token::Type::ParenthesisOpen)
 		{
 			index++; // Saltarnos el (
 			std::shared_ptr<ASTNode> expression = parseExpression();
-			if (notEnd() && tokens[index].type == Token::Type::ParentesisCierra)
+			if (notEnd() && tokens[index].type == Token::Type::ParenthesisClose)
 			{
 				index++;
 				return expression;
@@ -134,12 +134,12 @@ std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 {
 	std::shared_ptr<NodeIdentifier> identifier = parseIdentifier();
 
-	if (notEnd() && tokens[index].type == Token::Type::Asignacion)
+	if (notEnd() && tokens[index].type == Token::Type::Assignment)
 	{
 		index++; // Saltarnos el =
 		std::shared_ptr<ASTNode> expression = parseExpression();
 
-		if (notEnd() && tokens[index].type == Token::Type::PuntoComa)
+		if (notEnd() && tokens[index].type == Token::Type::Semicolon)
 		{
 			index++; // Saltarnos el ;
 			return std::make_shared<NodeAssignment>(identifier, expression);

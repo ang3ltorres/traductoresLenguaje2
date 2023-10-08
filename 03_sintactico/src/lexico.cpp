@@ -8,7 +8,7 @@
 
 using StringNumber = std::pair<std::string, unsigned int>;
 
-const std::vector<std::pair<std::string, std::string>> token_types =
+const std::vector<std::pair<std::string, std::string>> tokenTypes =
 {
 	{"true", "Palabra reservada true"},
 	{"false", "Palabra reservada false"},
@@ -70,19 +70,20 @@ const std::vector<std::pair<std::string, std::string>> token_types =
 	{"", "Cadena"},
 };
 
-const std::string operators_symbols = "+-*/%!=&|<>";
-const std::string separators_symbols = "{}()[],;";
-
 static bool is_operator(char c)
 {
-	for (const char& i : operators_symbols)
+	static const std::string operatorsSymbols = "+-*/%!=&|<>";
+
+	for (const char& i : operatorsSymbols)
 		if (c == i) return true;
 	return false;
 }
 
 static bool is_separator(char c)
 {
-	for (const auto& i : separators_symbols)
+	static const std::string separatorsSymbols = "{}()[],;";
+
+	for (const auto& i : separatorsSymbols)
 		if (i == c) return true;
 	return false;
 }
@@ -288,7 +289,7 @@ std::vector<Token> getTokens(const std::string& code)
 		// Buscar
 		bool found = false;
 		int index = 0;
-		for (const auto& i : token_types)
+		for (const auto& i : tokenTypes)
 		{
 			if (i.first == w.first)
 				{found = true; break;}
@@ -300,13 +301,13 @@ std::vector<Token> getTokens(const std::string& code)
 		if (found)
 			tokens.push_back(Token{static_cast<Token::Type>(index), w.first, w.second});
 		else if (w.first.front() == '"')
-			tokens.push_back(Token{Token::Type::Cadena, w.first, w.second});
+			tokens.push_back(Token{Token::Type::String, w.first, w.second});
 		else if (valid_id(w.first))
-			tokens.push_back(Token{Token::Type::Identificador, w.first, w.second});
+			tokens.push_back(Token{Token::Type::Identifier, w.first, w.second});
 		else if ((tipo_numero = valid_number(w.first)) != 0)
-			tokens.push_back(Token{(tipo_numero == 1) ? Token::Type::Numero : Token::Type::NumeroFlotante, w.first, w.second});
+			tokens.push_back(Token{(tipo_numero == 1) ? Token::Type::Number : Token::Type::FloatingPointNumber, w.first, w.second});
 		else
-			tokens.push_back(Token{Token::Type::Desconocido, w.first, w.second});
+			tokens.push_back(Token{Token::Type::Unknown, w.first, w.second});
 	}
 
 	return tokens;
@@ -314,9 +315,9 @@ std::vector<Token> getTokens(const std::string& code)
 
 std::ostream& operator<<(std::ostream& os, const Token& token)
 {
-	// os << "TOKEN: " << token_types[static_cast<int>(token.type)].second << "\t\tLEXEMA: " << token.lexema << "\t\tLINE: " << token.line;
+	// os << "TOKEN: " << tokenTypes[static_cast<int>(token.type)].second << "\t\tLEXEMA: " << token.lexema << "\t\tLINE: " << token.line;
 	// return os;
 
-	os << std::format("Token: {:<32s}Lexema: {:<24s}Linea: {:d}", token_types[static_cast<int>(token.type)].second, token.lexema, token.line);
+	os << std::format("Token: {:<32s}Lexema: {:<24s}Linea: {:d}", tokenTypes[static_cast<int>(token.type)].second, token.lexema, token.line);
 	return os;
 }
