@@ -20,6 +20,9 @@ NodeRelationalOperator::NodeRelationalOperator(unsigned int line, NodeRelational
 NodeExpression::NodeExpression(std::shared_ptr<ASTNode> term)
 : ASTNode{ASTNode::Type::Expression, term->lineNumber}, term(term) {}
 
+NodeCondition::NodeCondition(unsigned int line, std::shared_ptr<NodeExpression> left, std::shared_ptr<NodeRelationalOperator> op, std::shared_ptr<NodeExpression> right)
+: ASTNode{ASTNode::Type::Condition, line}, left(left), op(op), right(right) {}
+
 NodeTerm::NodeTerm(std::shared_ptr<ASTNode> factor)
 : ASTNode{ASTNode::Type::Term, factor->lineNumber}, factor(factor) {}
 
@@ -176,6 +179,15 @@ std::shared_ptr<ASTNode> Parser::parseFactor()
 	}
 
 	throw std::runtime_error("Factor inválido.");
+}
+
+std::shared_ptr<ASTNode> Parser::parseCondition()
+{
+	std::shared_ptr<ASTNode> left = parseExpression();
+	std::shared_ptr<ASTNode> op = parseRelationalOperator();
+	std::shared_ptr<ASTNode> right = parseExpression();
+
+	return std::make_shared<NodeCondition>(left->lineNumber, left, op, right);
 }
 
 std::shared_ptr<ASTNode> Parser::parseReturnStatement()

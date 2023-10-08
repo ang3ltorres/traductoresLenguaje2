@@ -14,6 +14,7 @@ struct ASTNode
 		Declaration,
 		Identifier,
 		Expression,
+		Condition,
 		Term,
 		Factor,
 		Number,
@@ -85,6 +86,15 @@ struct NodeExpression: public ASTNode
 
 	// Term, BinaryExpression
 	std::shared_ptr<ASTNode> term;
+};
+
+struct NodeCondition: public ASTNode
+{
+	NodeCondition(unsigned int line, std::shared_ptr<NodeExpression> left, std::shared_ptr<NodeRelationalOperator> op, std::shared_ptr<NodeExpression> right);
+
+	std::shared_ptr<NodeExpression> left;
+	std::shared_ptr<NodeRelationalOperator> op;
+	std::shared_ptr<NodeExpression> right;
 };
 
 struct NodeTerm : public ASTNode
@@ -168,6 +178,7 @@ public:
 	std::shared_ptr<ASTNode> parseExpression();
 	std::shared_ptr<ASTNode> parseTerm();
 	std::shared_ptr<ASTNode> parseFactor();
+	std::shared_ptr<ASTNode> parseCondition();
 	std::shared_ptr<ASTNode> parseReturnStatement();
 	std::shared_ptr<NodeAssignment> parseAssignment();
 	std::shared_ptr<NodeDeclaration> parseDeclaration();
