@@ -29,10 +29,12 @@ NodeProgram::NodeProgram(std::vector<std::shared_ptr<NodeAssignment>> node)
 Parser::Parser(const std::vector<Token>& tokens)
 : tokens(tokens), index(0) {}
 
+bool Parser::notEnd() {return index < tokens.size();}
+
 std::shared_ptr<NodeProgram> Parser::parseProgram()
 {
 	std::vector<std::shared_ptr<NodeAssignment>> assignments;
-	while (index < tokens.size())
+	while (notEnd())
 		assignments.push_back(parseAssignment());
 
 	return std::make_shared<NodeProgram>(assignments);
@@ -40,7 +42,7 @@ std::shared_ptr<NodeProgram> Parser::parseProgram()
 
 Token Parser::getNextToken()
 {
-	if (index < tokens.size())
+	if (notEnd())
 		return tokens[index++];
 	else
 		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
@@ -67,7 +69,7 @@ std::shared_ptr<NodeNumber> Parser::parseNumber()
 std::shared_ptr<ASTNode> Parser::parseExpression()
 {
 	std::shared_ptr<ASTNode> leftTerm = parseTerm();
-	if (index < tokens.size() && (tokens[index].type == Token::Type::OperacionSuma || tokens[index].type == Token::Type::OperacionResta))
+	if (notEnd() && (tokens[index].type == Token::Type::OperacionSuma || tokens[index].type == Token::Type::OperacionResta))
 	{
 		Token op = getNextToken();
 		std::shared_ptr<ASTNode> rightTerm = parseExpression();
@@ -86,7 +88,7 @@ std::shared_ptr<ASTNode> Parser::parseTerm()
 {
 	std::shared_ptr<ASTNode> factor = parseFactor();
 
-	if (index < tokens.size() && (tokens[index].type == Token::Type::OperacionMultiplicacion || tokens[index].type == Token::Type::OperacionDivision))
+	if (notEnd() && (tokens[index].type == Token::Type::OperacionMultiplicacion || tokens[index].type == Token::Type::OperacionDivision))
 	{
 		Token op = getNextToken();
 		std::shared_ptr<ASTNode> right = parseTerm();
@@ -103,7 +105,7 @@ std::shared_ptr<ASTNode> Parser::parseTerm()
 
 std::shared_ptr<ASTNode> Parser::parseFactor()
 {
-	if (index < tokens.size())
+	if (notEnd())
 	{
 		Token token = tokens[index];
 
@@ -115,7 +117,7 @@ std::shared_ptr<ASTNode> Parser::parseFactor()
 		{
 			index++; // Saltarnos el (
 			std::shared_ptr<ASTNode> expression = parseExpression();
-			if (index < tokens.size() && tokens[index].type == Token::Type::ParentesisCierra)
+			if (notEnd() && tokens[index].type == Token::Type::ParentesisCierra)
 			{
 				index++;
 				return expression;
@@ -132,12 +134,12 @@ std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 {
 	std::shared_ptr<NodeIdentifier> identifier = parseIdentifier();
 
-	if (index < tokens.size() && tokens[index].type == Token::Type::Asignacion)
+	if (notEnd() && tokens[index].type == Token::Type::Asignacion)
 	{
 		index++; // Saltarnos el =
 		std::shared_ptr<ASTNode> expression = parseExpression();
 
-		if (index < tokens.size() && tokens[index].type == Token::Type::PuntoComa)
+		if (notEnd() && tokens[index].type == Token::Type::PuntoComa)
 		{
 			index++; // Saltarnos el ;
 			return std::make_shared<NodeAssignment>(identifier, expression);

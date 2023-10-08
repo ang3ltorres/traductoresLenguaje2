@@ -92,6 +92,8 @@ class Parser
 {
 public:
 	Parser(const std::vector<Token>& tokens);
+	
+	bool notEnd();
 
 	const std::vector<Token>& tokens;
 	size_t index;

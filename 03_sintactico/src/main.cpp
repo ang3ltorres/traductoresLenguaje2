@@ -6,7 +6,7 @@
 int main()
 {
 	// Obtener los tokens usando tu función getTokens
-	std::vector<Token> tokens = getTokens("y= (32 + 99); k = 92; 32;");
+	std::vector<Token> tokens = getTokens("y= (32 + 99); k = 92; l");
 	
 	try
 	{
