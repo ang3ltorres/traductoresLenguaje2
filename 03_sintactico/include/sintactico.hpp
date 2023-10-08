@@ -10,6 +10,7 @@ struct ASTNode
 	enum class Type : int
 	{
 		Program = 0,
+		Function,
 		Statement,
 		IfStatement,
 		Assignament,
@@ -187,6 +188,21 @@ struct NodeStatement : public ASTNode
 	std::shared_ptr<ASTNode> statement;
 };
 
+struct NodeFunction : public ASTNode
+{
+	NodeFunction(unsigned int line,
+		std::shared_ptr<ASTNode> datatype,
+		std::shared_ptr<ASTNode> identifier,
+		std::shared_ptr<ASTNode> parameters,
+		std::vector< std::shared_ptr<ASTNode> > statements
+	);
+
+	std::shared_ptr<ASTNode> datatype;
+	std::shared_ptr<ASTNode> identifier;
+	std::shared_ptr<ASTNode> parameters;
+	std::vector< std::shared_ptr<ASTNode> > statements;
+};
+
 struct NodeProgram : public ASTNode
 {
 	NodeProgram(std::vector<std::shared_ptr<NodeAssignment>> node);
@@ -221,4 +237,5 @@ public:
 	std::shared_ptr<NodeDeclaration> parseDeclaration();
 	std::shared_ptr<ASTNode> parseIfStatement();
 	std::shared_ptr<NodeStatement> parseStatement();
+	std::shared_ptr<NodeFunction> parseFunction();
 };

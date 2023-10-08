@@ -50,6 +50,14 @@ NodeIfStatement::NodeIfStatement(unsigned int line, std::shared_ptr<ASTNode> con
 NodeStatement::NodeStatement(unsigned int line, std::shared_ptr<ASTNode> statement)
 : ASTNode{ASTNode::Type::Statement, line}, statement(statement) {}
 
+NodeFunction::NodeFunction(unsigned int line,
+	std::shared_ptr<ASTNode> datatype,
+	std::shared_ptr<ASTNode> identifier,
+	std::shared_ptr<ASTNode> parameters,
+	std::vector< std::shared_ptr<ASTNode> > statements
+)
+: ASTNode{ASTNode::Type::Function, line}, datatype(datatype), identifier(identifier), parameters(parameters), statements(statements) {}
+
 NodeProgram::NodeProgram(std::vector<std::shared_ptr<NodeAssignment>> node)
 : ASTNode{ASTNode::Type::Program, 0}, node(node) {}
 
@@ -336,8 +344,8 @@ std::shared_ptr<ASTNode> Parser::parseIfStatement()
 	t = getNextToken();
 	if (t.type != Token::Type::BraceClose)
 	{
-		index++; // Saltarnos el )
-		return std::make_shared<NodeStatement>(t.line, statements);
+		index++; // Saltarnos el }
+		return std::make_shared<NodeIfStatement>(t.line, condition, statements);
 	}
 
 	while (true)
@@ -350,7 +358,7 @@ std::shared_ptr<ASTNode> Parser::parseIfStatement()
 			if (tokens[index].type == Token::Type::BraceClose)
 			{
 				index++; // Saltarnos el }
-				return std::make_shared<NodeParamaters>(statement->lineNumber, statements);
+				return std::make_shared<NodeIfStatement>(statement->lineNumber, condition, statements);
 			}
 		}
 		else
@@ -391,4 +399,49 @@ std::shared_ptr<NodeStatement> Parser::parseStatement()
 	} catch (const std::exception& e) {}
 
 	throw std::runtime_error("Se esperaba un statement (Declaracion, Asignacion, If, Return).");
+}
+
+std::shared_ptr<NodeFunction> Parser::parseFunction()
+{
+	Token t;
+
+	std::shared_ptr<ASTNode> dataType = parseDataType();
+	std::shared_ptr<ASTNode> identifier = parseIdentifier();
+
+	t = getNextToken();
+	if (t.type != Token::Type::ParenthesisOpen)
+		throw std::runtime_error("Se esperaba parentesis abre.");
+
+	std::shared_ptr<ASTNode> parameters = parseParameters();
+
+	t = getNextToken();
+	if (t.type != Token::Type::ParenthesisClose)
+		throw std::runtime_error("Se esperaba parentesis de cierre.");
+
+	/******/
+	std::vector<std::shared_ptr<ASTNode>> statements;
+
+	t = getNextToken();
+	if (t.type != Token::Type::BraceClose)
+	{
+		index++; // Saltarnos el }
+		return std::make_shared<NodeFunction>(t.line, dataType, identifier, parameters, statements);
+	}
+
+	while (true)
+	{
+		std::shared_ptr<ASTNode> statement = parseStatement();
+		statements.push_back(statement);
+
+		if (notEnd())
+		{
+			if (tokens[index].type == Token::Type::BraceClose)
+			{
+				index++; // Saltarnos el }
+				return std::make_shared<NodeFunction>(statement->lineNumber, dataType, identifier, parameters, statements);
+			}
+		}
+		else
+			throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
+	}
 }
