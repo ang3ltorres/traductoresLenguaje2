@@ -16,10 +16,13 @@ struct ASTNode
 		Term,
 		Factor,
 		Number,
+		FloatingPointNumber,
+		DataType,
+		RelationalOperator,
 		BinaryExpression,
 	};
 
-	Type type;
+	ASTNode::Type type;
 	unsigned int lineNumber;
 };
 
@@ -33,6 +36,45 @@ struct NodeNumber: public ASTNode
 {
 	NodeNumber(unsigned int line, int value);
 	int value;
+};
+
+struct NodeFloatingPointNumber: public ASTNode
+{
+	NodeFloatingPointNumber(unsigned int line, float value);
+	float value;
+};
+
+struct NodeDataType: public ASTNode
+{
+	enum class Type : int
+	{
+		Void = 0,
+		Char,
+		Short,
+		Int,
+		Long,
+		Float,
+		Bool,
+	};
+
+	NodeDataType(unsigned int line, NodeDataType::Type dataType);
+	NodeDataType::Type dataType;
+};
+
+struct NodeRelationalOperator: public ASTNode
+{
+	enum class Type : int
+	{
+		LessThan = 0,
+		GreaterThan,
+		LessThanOrEqual,
+		GreaterThanOrEqual,
+		EqualTo,
+		NotEqualTo,
+	};
+
+	NodeRelationalOperator(unsigned int line, NodeRelationalOperator::Type operatorType);
+	NodeRelationalOperator::Type operatorType;
 };
 
 struct NodeExpression: public ASTNode

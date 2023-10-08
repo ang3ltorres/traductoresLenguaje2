@@ -8,6 +8,15 @@ NodeIdentifier::NodeIdentifier(unsigned int line, const std::string& name)
 NodeNumber::NodeNumber(unsigned int line, int value)
 : ASTNode{ASTNode::Type::Number, line}, value(value) {}
 
+NodeFloatingPointNumber::NodeFloatingPointNumber(unsigned int line, float value)
+: ASTNode{ASTNode::Type::FloatingPointNumber, line}, value(value) {}
+
+NodeDataType::NodeDataType(unsigned int line, NodeDataType::Type dataType)
+: ASTNode{ASTNode::Type::DataType, line}, dataType(dataType) {}
+
+NodeRelationalOperator::NodeRelationalOperator(unsigned int line, NodeRelationalOperator::Type operatorType)
+: ASTNode{ASTNode::Type::RelationalOperator, line}, operatorType(operatorType) {}
+
 NodeExpression::NodeExpression(std::shared_ptr<ASTNode> term)
 : ASTNode{ASTNode::Type::Expression, term->lineNumber}, term(term) {}
 
