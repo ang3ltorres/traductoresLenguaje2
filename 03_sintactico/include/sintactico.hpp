@@ -10,6 +10,8 @@ struct ASTNode
 	enum class Type : int
 	{
 		Program = 0,
+		Statement,
+		IfStatement,
 		Assignament,
 		Declaration,
 		Identifier,
@@ -78,7 +80,7 @@ struct NodeParamaters: public ASTNode
 {
 	NodeParamaters(unsigned int line, std::vector< std::shared_ptr<NodeArgument> > args);
 
-	std::vector< std::shared_ptr<ASTNode> > args;
+	std::vector< std::shared_ptr<NodeArgument> > args;
 };
 
 struct NodeRelationalOperator: public ASTNode
@@ -169,6 +171,22 @@ struct NodeDeclaration : public ASTNode
 	std::shared_ptr<ASTNode> node;
 };
 
+struct NodeIfStatement : public ASTNode
+{
+	NodeIfStatement(unsigned int line, std::shared_ptr<ASTNode> condition, std::vector< std::shared_ptr<ASTNode> > statements);
+
+	std::shared_ptr<ASTNode> condition;
+	std::vector< std::shared_ptr<ASTNode> > statements;
+};
+
+struct NodeStatement : public ASTNode
+{
+	NodeStatement(unsigned int line, std::shared_ptr<ASTNode> statement);
+
+	// Declaration, Assignment, IfStatement, ReturnStatement
+	std::shared_ptr<ASTNode> statement;
+};
+
 struct NodeProgram : public ASTNode
 {
 	NodeProgram(std::vector<std::shared_ptr<NodeAssignment>> node);
@@ -201,4 +219,6 @@ public:
 	std::shared_ptr<ASTNode> parseReturnStatement();
 	std::shared_ptr<NodeAssignment> parseAssignment();
 	std::shared_ptr<NodeDeclaration> parseDeclaration();
+	std::shared_ptr<ASTNode> parseIfStatement();
+	std::shared_ptr<NodeStatement> parseStatement();
 };
