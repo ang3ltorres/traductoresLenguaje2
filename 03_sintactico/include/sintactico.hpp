@@ -145,6 +145,8 @@ public:
 
 	std::shared_ptr<NodeIdentifier> parseIdentifier();
 	std::shared_ptr<NodeNumber> parseNumber();
+	std::shared_ptr<ASTNode> parseDataType();
+	std::shared_ptr<ASTNode> parseRelationalOperator();
 	std::shared_ptr<ASTNode> parseExpression();
 	std::shared_ptr<ASTNode> parseTerm();
 	std::shared_ptr<ASTNode> parseFactor();

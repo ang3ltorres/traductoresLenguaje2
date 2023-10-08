@@ -75,6 +75,39 @@ std::shared_ptr<NodeNumber> Parser::parseNumber()
 		throw std::runtime_error("Se esperaba un numero.");
 }
 
+std::shared_ptr<ASTNode> Parser::parseDataType()
+{
+	Token t = getNextToken();
+
+	switch (t.type)
+	{
+		case Token::Type::DataTypeVoid: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Void);
+		case Token::Type::DataTypeChar: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Char);
+		case Token::Type::DataTypeShort: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Short);
+		case Token::Type::DataTypeInt: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Int);
+		case Token::Type::DataTypeLong: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Long);
+		case Token::Type::DataTypeFloat: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Float);
+		case Token::Type::DataTypeBool: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Bool);
+		default: throw std::runtime_error("Se esperaba un tipo de dato.");
+	}
+}
+
+std::shared_ptr<ASTNode> Parser::parseRelationalOperator()
+{
+	Token t = getNextToken();
+	
+	switch (t.type)
+	{
+		case Token::Type::LessThan: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::LessThan);
+		case Token::Type::GreaterThan: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::GreaterThan);
+		case Token::Type::LessThanOrEqual: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::LessThanOrEqual);
+		case Token::Type::GreaterThanOrEqual: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::GreaterThanOrEqual);
+		case Token::Type::EqualTo: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::EqualTo);
+		case Token::Type::NotEqualTo: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::NotEqualTo);
+		default: throw std::runtime_error("Se esperaba un operador relacional.");
+	}
+}
+
 std::shared_ptr<ASTNode> Parser::parseExpression()
 {
 	std::shared_ptr<ASTNode> leftTerm = parseTerm();
