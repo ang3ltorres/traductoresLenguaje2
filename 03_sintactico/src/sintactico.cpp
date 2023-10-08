@@ -192,6 +192,42 @@ std::shared_ptr<ASTNode> Parser::parseArgument()
 	return std::make_shared<NodeArgument>(dataType->lineNumber, dataType, identifier);
 }
 
+std::shared_ptr<ASTNode> Parser::parseParameters()
+{
+	std::vector< std::shared_ptr<ASTNode> > args;
+
+	if (notEnd() && tokens[index].type == Token::Type::ParenthesisClose)
+		return std::make_shared<NodeParamaters>(tokens[index].line, args);
+
+	while (true)
+	{
+		std::shared_ptr<ASTNode> arg = parseArgument();
+		args.push_back(arg);
+
+		if (notEnd())
+		{
+			if (tokens[index].type == Token::Type::ParenthesisClose)
+			{
+				index++; // Saltarnos la ,
+				return std::make_shared<NodeParamaters>(arg->lineNumber, args);
+			}
+			else if (tokens[index].type == Token::Type::Comma)
+			{
+				index++; // Saltarnos la ,
+				continue;
+			}
+			else
+				throw std::runtime_error("Se esperaba un parentesis de cierre o una coma.");
+		}
+		else
+			throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
+	}
+
+	Token t = tokens[index];
+	if (t.type == Token::Type::ParenthesisClose)
+
+}
+
 std::shared_ptr<ASTNode> Parser::parseCondition()
 {
 	std::shared_ptr<ASTNode> left = parseExpression();

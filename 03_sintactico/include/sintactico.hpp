@@ -16,6 +16,7 @@ struct ASTNode
 		Expression,
 		Condition,
 		Argument,
+		Parameters,
 		Term,
 		Factor,
 		Number,
@@ -71,6 +72,13 @@ struct NodeArgument: public ASTNode
 
 	std::shared_ptr<NodeDataType> dataType;
 	std::shared_ptr<NodeIdentifier> identifier;
+};
+
+struct NodeParamaters: public ASTNode
+{
+	NodeParamaters(unsigned int line, std::vector< std::shared_ptr<NodeArgument> > args);
+
+	std::vector< std::shared_ptr<ASTNode> > args;
 };
 
 struct NodeRelationalOperator: public ASTNode
@@ -188,6 +196,7 @@ public:
 	std::shared_ptr<ASTNode> parseTerm();
 	std::shared_ptr<ASTNode> parseFactor();
 	std::shared_ptr<ASTNode> parseArgument();
+	std::shared_ptr<ASTNode> parseParameters();
 	std::shared_ptr<ASTNode> parseCondition();
 	std::shared_ptr<ASTNode> parseReturnStatement();
 	std::shared_ptr<NodeAssignment> parseAssignment();
