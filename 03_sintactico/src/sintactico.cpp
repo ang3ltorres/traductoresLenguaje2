@@ -23,6 +23,9 @@ NodeExpression::NodeExpression(std::shared_ptr<ASTNode> term)
 NodeTerm::NodeTerm(std::shared_ptr<ASTNode> factor)
 : ASTNode{ASTNode::Type::Term, factor->lineNumber}, factor(factor) {}
 
+NodeReturnStatement::NodeReturnStatement(unsigned int line, std::shared_ptr<ASTNode> expression)
+: ASTNode{ASTNode::Type::ReturnStatement, line}, expression(expression) {}
+
 NodeBinaryExpression::NodeBinaryExpression(Operation operation, std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> right)
 : ASTNode{ASTNode::Type::BinaryExpression, left->lineNumber}, operation(operation), left(left), right(right) {}
 
@@ -161,7 +164,7 @@ std::shared_ptr<ASTNode> Parser::parseFactor()
 			std::shared_ptr<ASTNode> expression = parseExpression();
 			if (notEnd() && tokens[index].type == Token::Type::ParenthesisClose)
 			{
-				index++;
+				index++; // Saltarnos el )
 				return expression;
 			}
 			else
@@ -170,6 +173,24 @@ std::shared_ptr<ASTNode> Parser::parseFactor()
 	}
 
 	throw std::runtime_error("Factor inválido.");
+}
+
+std::shared_ptr<ASTNode> Parser::parseReturnStatement()
+{
+	Token t;
+
+	t = getNextToken();
+	if (t.type != Token::Type::ReservedWordReturn)
+		throw std::runtime_error("Se esperaba un return.");
+
+	std::shared_ptr<ASTNode> expression = parseExpression();
+	if (notEnd() && tokens[index].type == Token::Type::Semicolon)
+	{
+		index++; // Saltarnos el ;
+		return std::make_shared<NodeReturnStatement>(t.line, expression);
+	}
+	else
+		throw std::runtime_error("Se esperaba un punto y coma.");
 }
 
 std::shared_ptr<NodeAssignment> Parser::parseAssignment()

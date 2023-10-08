@@ -19,6 +19,7 @@ struct ASTNode
 		FloatingPointNumber,
 		DataType,
 		RelationalOperator,
+		ReturnStatement,
 		BinaryExpression,
 	};
 
@@ -93,6 +94,12 @@ struct NodeTerm : public ASTNode
 	std::shared_ptr<ASTNode> factor;
 };
 
+struct NodeReturnStatement : public ASTNode
+{
+	NodeReturnStatement(unsigned int line, std::shared_ptr<ASTNode> expression);
+	std::shared_ptr<ASTNode> expression;
+};
+
 struct NodeBinaryExpression : public ASTNode
 {
 	enum class Operation : int
@@ -150,5 +157,6 @@ public:
 	std::shared_ptr<ASTNode> parseExpression();
 	std::shared_ptr<ASTNode> parseTerm();
 	std::shared_ptr<ASTNode> parseFactor();
+	std::shared_ptr<ASTNode> parseReturnStatement();
 	std::shared_ptr<NodeAssignment> parseAssignment();
 };
