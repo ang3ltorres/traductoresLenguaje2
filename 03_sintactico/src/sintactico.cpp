@@ -35,6 +35,9 @@ NodeFactor::NodeFactor(std::shared_ptr<ASTNode> factor)
 NodeAssignment::NodeAssignment(std::shared_ptr<ASTNode> var, std::shared_ptr<ASTNode> exp)
 : ASTNode{ASTNode::Type::Assignament, var->lineNumber}, var(var), exp(exp) {}
 
+NodeDeclaration::NodeDeclaration(unsigned int line, std::shared_ptr<ASTNode> node)
+: ASTNode{ASTNode::Type::Declaration, line}, node(node) {}
+
 NodeProgram::NodeProgram(std::vector<std::shared_ptr<NodeAssignment>> node)
 : ASTNode{ASTNode::Type::Program, 0}, node(node) {}
 
@@ -212,4 +215,31 @@ std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 	}
 	
 	throw std::runtime_error("Se esperaba un operador de asignacion.");
+}
+
+std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
+{
+	std::shared_ptr<ASTNode> dataType = parseDataType();
+	std::shared_ptr<ASTNode> identifier = parseIdentifier();
+
+	Token t = getNextToken();
+	if (t.type == Token::Type::Semicolon)
+	{
+		return std::make_shared<NodeDeclaration>(dataType, identifier);
+	}
+	else if (t.type == Token::Type::Assignment)
+	{
+		std::shared_ptr<ASTNode> expression = parseExpression();
+		t = getNextToken();
+		if (t.type == Token::Type::Semicolon)
+		{
+			std::shared_ptr<ASTNode> assignment = std::make_shared<NodeAssignment>(identifier, expression);
+
+			return std::make_shared<NodeDeclaration>(dataType, assignment);
+		}
+		else
+			throw std::runtime_error("Se esperaba un punto y coma.");
+	}
+	
+	throw std::runtime_error("Se esperaba un operador de asignacion o un punto y coma.");
 }

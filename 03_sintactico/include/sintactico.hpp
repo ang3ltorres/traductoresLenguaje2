@@ -11,6 +11,7 @@ struct ASTNode
 	{
 		Program = 0,
 		Assignament,
+		Declaration,
 		Identifier,
 		Expression,
 		Term,
@@ -131,6 +132,16 @@ struct NodeAssignment : public ASTNode
 	std::shared_ptr<ASTNode> exp;
 };
 
+struct NodeDeclaration : public ASTNode
+{
+	NodeDeclaration(unsigned int line, std::shared_ptr<ASTNode> node);
+
+	std::shared_ptr<NodeDataType> dataType;
+
+	// Identifier, Assignment
+	std::shared_ptr<ASTNode> node;
+};
+
 struct NodeProgram : public ASTNode
 {
 	NodeProgram(std::vector<std::shared_ptr<NodeAssignment>> node);
@@ -159,4 +170,5 @@ public:
 	std::shared_ptr<ASTNode> parseFactor();
 	std::shared_ptr<ASTNode> parseReturnStatement();
 	std::shared_ptr<NodeAssignment> parseAssignment();
+	std::shared_ptr<NodeDeclaration> parseDeclaration();
 };
