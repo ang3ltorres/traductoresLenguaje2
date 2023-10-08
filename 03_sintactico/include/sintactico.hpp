@@ -71,17 +71,17 @@ struct NodeDataType: public ASTNode
 
 struct NodeArgument: public ASTNode
 {
-	NodeArgument(unsigned int line, std::shared_ptr<NodeDataType> dataType, std::shared_ptr<NodeIdentifier> identifier);
+	NodeArgument(unsigned int line, std::shared_ptr<ASTNode> dataType, std::shared_ptr<ASTNode> identifier);
 
-	std::shared_ptr<NodeDataType> dataType;
-	std::shared_ptr<NodeIdentifier> identifier;
+	std::shared_ptr<ASTNode> dataType;
+	std::shared_ptr<ASTNode> identifier;
 };
 
 struct NodeParamaters: public ASTNode
 {
-	NodeParamaters(unsigned int line, std::vector< std::shared_ptr<NodeArgument> > args);
+	NodeParamaters(unsigned int line, std::vector< std::shared_ptr<ASTNode> > args);
 
-	std::vector< std::shared_ptr<NodeArgument> > args;
+	std::vector< std::shared_ptr<ASTNode> > args;
 };
 
 struct NodeRelationalOperator: public ASTNode
@@ -110,11 +110,11 @@ struct NodeExpression: public ASTNode
 
 struct NodeCondition: public ASTNode
 {
-	NodeCondition(unsigned int line, std::shared_ptr<NodeExpression> left, std::shared_ptr<NodeRelationalOperator> op, std::shared_ptr<NodeExpression> right);
+	NodeCondition(unsigned int line, std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> op, std::shared_ptr<ASTNode> right);
 
-	std::shared_ptr<NodeExpression> left;
-	std::shared_ptr<NodeRelationalOperator> op;
-	std::shared_ptr<NodeExpression> right;
+	std::shared_ptr<ASTNode> left; // Expression
+	std::shared_ptr<ASTNode> op; // RelationalOperator
+	std::shared_ptr<ASTNode> right; // Expression
 };
 
 struct NodeTerm : public ASTNode
@@ -164,9 +164,9 @@ struct NodeAssignment : public ASTNode
 
 struct NodeDeclaration : public ASTNode
 {
-	NodeDeclaration(unsigned int line, std::shared_ptr<ASTNode> node);
+	NodeDeclaration(unsigned int line, std::shared_ptr<ASTNode> dataType, std::shared_ptr<ASTNode> node);
 
-	std::shared_ptr<NodeDataType> dataType;
+	std::shared_ptr<ASTNode> dataType;
 
 	// Identifier, Assignment
 	std::shared_ptr<ASTNode> node;
@@ -205,8 +205,8 @@ struct NodeFunction : public ASTNode
 
 struct NodeProgram : public ASTNode
 {
-	NodeProgram(std::vector<std::shared_ptr<NodeAssignment>> node);
-	std::vector<std::shared_ptr<NodeAssignment>> node;
+	NodeProgram(std::vector<std::shared_ptr<NodeFunction>> functions);
+	std::vector<std::shared_ptr<NodeFunction>> functions;
 };
 
 class Parser
