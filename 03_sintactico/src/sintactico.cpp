@@ -14,6 +14,9 @@ NodeFloatingPointNumber::NodeFloatingPointNumber(unsigned int line, float value)
 NodeDataType::NodeDataType(unsigned int line, NodeDataType::Type dataType)
 : ASTNode{ASTNode::Type::DataType, line}, dataType(dataType) {}
 
+NodeArgument::NodeArgument(unsigned int line, std::shared_ptr<NodeDataType> dataType, std::shared_ptr<NodeIdentifier> identifier)
+: ASTNode{ASTNode::Type::Argument, line}, dataType(dataType), identifier(identifier) {}
+
 NodeRelationalOperator::NodeRelationalOperator(unsigned int line, NodeRelationalOperator::Type operatorType)
 : ASTNode{ASTNode::Type::RelationalOperator, line}, operatorType(operatorType) {}
 
@@ -179,6 +182,14 @@ std::shared_ptr<ASTNode> Parser::parseFactor()
 	}
 
 	throw std::runtime_error("Factor inválido.");
+}
+
+std::shared_ptr<ASTNode> Parser::parseArgument()
+{
+	std::shared_ptr<ASTNode> dataType = parseDataType();
+	std::shared_ptr<ASTNode> identifier = parseIdentifier();
+
+	return std::make_shared<NodeArgument>(dataType->lineNumber, dataType, identifier);
 }
 
 std::shared_ptr<ASTNode> Parser::parseCondition()
