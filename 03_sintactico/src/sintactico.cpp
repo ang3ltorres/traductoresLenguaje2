@@ -222,10 +222,6 @@ std::shared_ptr<ASTNode> Parser::parseParameters()
 		else
 			throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
 	}
-
-	Token t = tokens[index];
-	if (t.type == Token::Type::ParenthesisClose)
-
 }
 
 std::shared_ptr<ASTNode> Parser::parseCondition()
