@@ -12,10 +12,11 @@ int main()
 	{
 		Parser parser(tokens);
 		std::shared_ptr<NodeProgram> program = parser.parseProgram();
+		std::cout << "El programa no contiene errores!! :D\n";
 	}
-	catch (const char* e)
+	catch (const std::runtime_error& e)
 	{
-		std::cerr << "Error: " << e << std::endl;
+		std::cerr << "Error: " << e.what() << std::endl;
 	}
 
 	return 0;

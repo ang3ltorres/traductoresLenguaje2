@@ -1,7 +1,6 @@
 #include "sintactico.hpp"
 
 #include <stdexcept>
-#include <exception>
 #include <algorithm>
 
 NodeIdentifier::NodeIdentifier(unsigned int line, const std::string& name)
@@ -85,7 +84,7 @@ Token Parser::getNextToken()
 	if (notEnd())
 		return tokens[index++];
 	else
-		throw "Se alcanzo el final de los tokens inesperadamente.";
+		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
 }
 
 std::shared_ptr<NodeIdentifier> Parser::parseIdentifier()
@@ -94,7 +93,7 @@ std::shared_ptr<NodeIdentifier> Parser::parseIdentifier()
 	if (t.type == Token::Type::Identifier)
 		return std::make_shared<NodeIdentifier>(t.line, t.lexema);
 	else
-		throw "Se esperaba un identificador.";
+		throw std::runtime_error("Se esperaba un identificador.");
 }
 
 std::shared_ptr<NodeNumber> Parser::parseNumber()
@@ -103,7 +102,7 @@ std::shared_ptr<NodeNumber> Parser::parseNumber()
 	if (t.type == Token::Type::Number)
 		return std::make_shared<NodeNumber>(t.line, std::stoi(t.lexema));
 	else
-		throw "Se esperaba un numero.";
+		throw std::runtime_error("Se esperaba un numero.");
 }
 
 std::shared_ptr<ASTNode> Parser::parseDataType()
@@ -119,7 +118,7 @@ std::shared_ptr<ASTNode> Parser::parseDataType()
 		case Token::Type::DataTypeLong: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Long);
 		case Token::Type::DataTypeFloat: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Float);
 		case Token::Type::DataTypeBool: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Bool);
-		default: throw "Se esperaba un tipo de dato.";
+		default: throw std::runtime_error("Se esperaba un tipo de dato.");
 	}
 }
 
@@ -135,7 +134,7 @@ std::shared_ptr<ASTNode> Parser::parseRelationalOperator()
 		case Token::Type::GreaterThanOrEqual: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::GreaterThanOrEqual);
 		case Token::Type::EqualTo: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::EqualTo);
 		case Token::Type::NotEqualTo: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::NotEqualTo);
-		default: throw "Se esperaba un operador relacional.";
+		default: throw std::runtime_error("Se esperaba un operador relacional.");
 	}
 }
 
@@ -196,11 +195,11 @@ std::shared_ptr<ASTNode> Parser::parseFactor()
 				return expression;
 			}
 			else
-				throw "Se esperaba un parentesis de cierre.";
+				throw std::runtime_error("Se esperaba un parentesis de cierre.");
 		}
 	}
 
-	throw "Factor inválido.";
+	throw std::runtime_error("Factor inválido.");
 }
 
 std::shared_ptr<ASTNode> Parser::parseArgument()
@@ -235,10 +234,10 @@ std::shared_ptr<ASTNode> Parser::parseParameters()
 				continue;
 			}
 			else
-				throw "Se esperaba un parentesis de cierre o una coma.";
+				throw std::runtime_error("Se esperaba un parentesis de cierre o una coma.");
 		}
 		else
-			throw "Se alcanzo el final de los tokens inesperadamente.";
+			throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
 	}
 }
 
@@ -265,10 +264,10 @@ std::shared_ptr<ASTNode> Parser::parseReturnStatement()
 			return std::make_shared<NodeReturnStatement>(tokens[index].line, expression);
 		}
 		else
-			throw "Se esperaba un punto y coma.";
+			throw std::runtime_error("Se esperaba un punto y coma.");
 	}
 	else
-		throw "Se esperaba un return.";
+		throw std::runtime_error("Se esperaba un return.");
 }
 
 std::shared_ptr<NodeAssignment> Parser::parseAssignment()
@@ -286,10 +285,10 @@ std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 			return std::make_shared<NodeAssignment>(identifier, expression);
 		}
 		else
-			throw "Se esperaba un punto y coma.";
+			throw std::runtime_error("Se esperaba un punto y coma.");
 	}
 	
-	throw "Se esperaba un operador de asignacion.";
+	throw std::runtime_error("Se esperaba un operador de asignacion.");
 }
 
 std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
@@ -313,10 +312,10 @@ std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
 			return std::make_shared<NodeDeclaration>(dataType->lineNumber, dataType, assignment);
 		}
 		else
-			throw "Se esperaba un punto y coma.";
+			throw std::runtime_error("Se esperaba un punto y coma.");
 	}
 	
-	throw "Se esperaba un operador de asignacion o un punto y coma.";
+	throw std::runtime_error("Se esperaba un operador de asignacion o un punto y coma.");
 }
 
 std::shared_ptr<ASTNode> Parser::parseIfStatement()
@@ -325,21 +324,21 @@ std::shared_ptr<ASTNode> Parser::parseIfStatement()
 
 	t = getNextToken();
 	if (t.type != Token::Type::ReservedWordIf)
-		throw "Se esperaba un if.";
+		throw std::runtime_error("Se esperaba un if.");
 
 	t = getNextToken();
 	if (t.type != Token::Type::ParenthesisOpen)
-		throw "Se esperaba un parentesis abre.";
+		throw std::runtime_error("Se esperaba un parentesis abre.");
 
 	std::shared_ptr<ASTNode> condition = parseCondition();
 
 	t = getNextToken();
 	if (t.type != Token::Type::ParenthesisClose)
-		throw "Se esperaba un parentesis de cierre.";
+		throw std::runtime_error("Se esperaba un parentesis de cierre.");
 
 	t = getNextToken();
 	if (t.type != Token::Type::BraceOpen)
-		throw "Se esperaba corchetes abre.";
+		throw std::runtime_error("Se esperaba corchetes abre.");
 	
 	/******/
 	std::vector<std::shared_ptr<ASTNode>> statements;
@@ -365,7 +364,7 @@ std::shared_ptr<ASTNode> Parser::parseIfStatement()
 			}
 		}
 		else
-			throw "Se alcanzo el final de los tokens inesperadamente.";
+			throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
 	}
 }
 
@@ -420,10 +419,10 @@ std::shared_ptr<NodeStatement> Parser::parseStatement()
 			return std::make_shared<NodeStatement>(node->lineNumber, node);
 		}
 		else
-			throw "Se esperaba un statement (Declaracion, Asignacion, If, Return).";
+			throw std::runtime_error("Se esperaba un statement (Declaracion, Asignacion, If, Return).");
 	}
 	else
-		throw "Se alcanzo el final de los tokens inesperadamente.";
+		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
 }
 
 std::shared_ptr<NodeFunction> Parser::parseFunction()
@@ -435,23 +434,23 @@ std::shared_ptr<NodeFunction> Parser::parseFunction()
 
 	t = getNextToken();
 	if (t.type != Token::Type::ParenthesisOpen)
-		throw "Se esperaba parentesis abre.";
+		throw std::runtime_error("Se esperaba parentesis abre.");
 
 	std::shared_ptr<ASTNode> parameters = parseParameters();
 
 	t = getNextToken();
 	if (t.type != Token::Type::ParenthesisClose)
-		throw "Se esperaba parentesis de cierre.";
+		throw std::runtime_error("Se esperaba parentesis de cierre.");
 
 	/******/
 	std::vector<std::shared_ptr<ASTNode>> statements;
 
 	if (!(notEnd() && tokens[index].type == Token::Type::BraceOpen))
-		throw "Se esperaba corchete abre.";
+		throw std::runtime_error("Se esperaba corchete abre.");
 	index++; // Saltarnos el {
 
 	if (!notEnd())
-		throw "Se alcanzo el final de los tokens inesperadamente.";
+		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
 
 	if (tokens[index].type == Token::Type::BraceClose)
 	{
@@ -473,5 +472,5 @@ std::shared_ptr<NodeFunction> Parser::parseFunction()
 			continue;
 	}
 
-	throw "Se alcanzo el final de los tokens inesperadamente.";
+	throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
 }
