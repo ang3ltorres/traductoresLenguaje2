@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <exception>
+#include <algorithm>
 
 NodeIdentifier::NodeIdentifier(unsigned int line, const std::string& name)
 : ASTNode{ASTNode::Type::Identifier, line}, name(name) {}
@@ -370,36 +371,59 @@ std::shared_ptr<ASTNode> Parser::parseIfStatement()
 
 std::shared_ptr<NodeStatement> Parser::parseStatement()
 {
-	// ReturnStatement
-	try
+	// TODO
+
+	// NO GENERALIZAR APRA ESPECIFICAR ERRORES
+	// SOPORTE DE FLOATS
+	// SOPORTE DE ELSE, ELSE IF
+
+	auto const isDataType = [](Token::Type type) -> bool
 	{
-		std::shared_ptr<ASTNode> node = parseReturnStatement();
-		return std::make_shared<NodeStatement>(node->lineNumber, node);
-	} catch (...) {}
+		static const std::vector<Token::Type> dataTypes =
+		{
+			Token::Type::DataTypeVoid,
+			Token::Type::DataTypeChar,
+			Token::Type::DataTypeShort,
+			Token::Type::DataTypeInt,
+			Token::Type::DataTypeLong,
+			Token::Type::DataTypeFloat,
+			Token::Type::DataTypeBool,
+		};
 
+		return std::any_of(dataTypes.begin(), dataTypes.end(), [type](Token::Type dataType){ return type == dataType; });
+	};
 
-	// Declaration
-	try
+	if (notEnd())
 	{
-		std::shared_ptr<ASTNode> node = parseDeclaration();
-		return std::make_shared<NodeStatement>(node->lineNumber, node);
-	} catch (...) {}
-
-	// Assignment
-	try
-	{
-		std::shared_ptr<ASTNode> node = parseAssignment();
-		return std::make_shared<NodeStatement>(node->lineNumber, node);
-	} catch (...) {}
-
-	// IfStatement
-	try
-	{
-		std::shared_ptr<ASTNode> node = parseIfStatement();
-		return std::make_shared<NodeStatement>(node->lineNumber, node);
-	} catch (...) {}
-
-	throw "Se esperaba un statement (Declaracion, Asignacion, If, Return).";
+		// ReturnStatement
+		if (tokens[index].type == Token::Type::ReservedWordReturn)
+		{
+			std::shared_ptr<ASTNode> node = parseReturnStatement();
+			return std::make_shared<NodeStatement>(node->lineNumber, node);
+		}
+		// IfStatement
+		else if (tokens[index].type == Token::Type::ReservedWordIf)
+		{
+			std::shared_ptr<ASTNode> node = parseIfStatement();
+			return std::make_shared<NodeStatement>(node->lineNumber, node);
+		}
+		// Assignment
+		else if (tokens[index].type == Token::Type::Identifier)
+		{
+			std::shared_ptr<ASTNode> node = parseAssignment();
+			return std::make_shared<NodeStatement>(node->lineNumber, node);
+		}
+		// Declaration
+		else if (isDataType(tokens[index].type))
+		{
+			std::shared_ptr<ASTNode> node = parseDeclaration();
+			return std::make_shared<NodeStatement>(node->lineNumber, node);
+		}
+		else
+			throw "Se esperaba un statement (Declaracion, Asignacion, If, Return).";
+	}
+	else
+		throw "Se alcanzo el final de los tokens inesperadamente.";
 }
 
 std::shared_ptr<NodeFunction> Parser::parseFunction()
