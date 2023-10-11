@@ -14,6 +14,7 @@ int main (int a) {
 	letra = uwu;
 
 	return 0;
+}
 
 void uwu()
 {

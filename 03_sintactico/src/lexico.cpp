@@ -72,6 +72,20 @@ const std::vector<std::pair<std::string, std::string>> tokenTypes =
 	{"", "Cadena"},
 };
 
+std::ostream& operator<<(std::ostream& os, const Token& token)
+{
+	// os << "TOKEN: " << tokenTypes[static_cast<int>(token.type)].second << "\t\tLEXEMA: " << token.lexema << "\t\tLINE: " << token.line;
+	// return os;
+
+	os << std::format("Token: {:<32s}Lexema: {:<24s}Linea: {:d}", tokenTypes[static_cast<int>(token.type)].second, token.lexema, token.line);
+	return os;
+}
+
+std::string Token::getTypeString() const
+{
+	return tokenTypes[static_cast<int>(type)].second;
+}
+
 static bool is_operator(char c)
 {
 	static const std::string operatorsSymbols = "+-*/%!=&|<>";
@@ -324,13 +338,4 @@ std::vector<Token> getTokens(const std::string& code)
 	}
 
 	return tokens;
-}
-
-std::ostream& operator<<(std::ostream& os, const Token& token)
-{
-	// os << "TOKEN: " << tokenTypes[static_cast<int>(token.type)].second << "\t\tLEXEMA: " << token.lexema << "\t\tLINE: " << token.line;
-	// return os;
-
-	os << std::format("Token: {:<32s}Lexema: {:<24s}Linea: {:d}", tokenTypes[static_cast<int>(token.type)].second, token.lexema, token.line);
-	return os;
 }

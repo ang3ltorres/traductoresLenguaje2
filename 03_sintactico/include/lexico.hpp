@@ -77,6 +77,8 @@ public:
 	std::string lexema;
 	unsigned int line;
 
+	std::string getTypeString() const;
+
 	friend std::ostream& operator<<(std::ostream& os, const Token& token);
 };
 

@@ -215,10 +215,31 @@ std::shared_ptr<ASTNode> Parser::parseArgument()
 
 std::shared_ptr<ASTNode> Parser::parseParameters()
 {
+	auto const isDataType = [](Token::Type type) -> bool
+	{
+		static const std::vector<Token::Type> dataTypes =
+		{
+			Token::Type::DataTypeVoid,
+			Token::Type::DataTypeChar,
+			Token::Type::DataTypeShort,
+			Token::Type::DataTypeInt,
+			Token::Type::DataTypeLong,
+			Token::Type::DataTypeFloat,
+			Token::Type::DataTypeBool,
+		};
+
+		return std::any_of(dataTypes.begin(), dataTypes.end(), [type](Token::Type dataType){ return type == dataType; });
+	};
+
 	std::vector< std::shared_ptr<ASTNode> > args;
 
-	if (notEnd() && tokens[index].type == Token::Type::ParenthesisClose)
-		return std::make_shared<NodeParamaters>(tokens[index].line, args);
+	if (notEnd())
+	{
+		if (tokens[index].type == Token::Type::ParenthesisClose)
+			return std::make_shared<NodeParamaters>(tokens[index].line, args);
+		else if (!isDataType(tokens[index].type))
+			throw std::runtime_error(std::format("Se esperaba parentesis de cierre o una lista de argumentos.\n\tLinea: {:d}\n", tokens[index-1].line));
+	}
 
 	while (true)
 	{
@@ -423,6 +444,7 @@ std::shared_ptr<NodeStatement> Parser::parseStatement()
 	// NO GENERALIZAR APRA ESPECIFICAR ERRORES
 	// SOPORTE DE FLOATS
 	// SOPORTE DE ELSE, ELSE IF
+	// isDataType esta 2 veces xd
 
 	auto const isDataType = [](Token::Type type) -> bool
 	{
@@ -524,3 +546,25 @@ std::shared_ptr<NodeFunction> Parser::parseFunction()
 
 	throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
 }
+
+
+#ifdef PYTHON_LIB
+
+	std::string parseTokens(const std::vector<Token>& tokens)
+	{
+		try
+		{
+			Parser parser(tokens);
+			std::shared_ptr<NodeProgram> program = parser.parseProgram();
+			return "El programa no contiene errores!! :D";
+		}
+		catch (const std::runtime_error& e)
+		{
+			std::string message;
+			message += "Error: ";
+			message += e.what();
+			return message;
+		}
+	}
+
+#endif

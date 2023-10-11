@@ -241,3 +241,9 @@ public:
 	std::shared_ptr<NodeStatement> parseStatement();
 	std::shared_ptr<NodeFunction> parseFunction();
 };
+
+#ifdef PYTHON_LIB
+	
+	std::string parseTokens(const std::vector<Token>& tokens);
+
+#endif
