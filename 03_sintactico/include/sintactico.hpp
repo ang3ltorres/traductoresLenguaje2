@@ -113,6 +113,8 @@ struct NodeCondition: public ASTNode
 	NodeCondition(unsigned int line, std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> op, std::shared_ptr<ASTNode> right);
 
 	std::shared_ptr<ASTNode> left; // Expression
+
+	// Optional
 	std::shared_ptr<ASTNode> op; // RelationalOperator
 	std::shared_ptr<ASTNode> right; // Expression
 };

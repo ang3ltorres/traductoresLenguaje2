@@ -2,11 +2,15 @@
 #include "sintactico.hpp"
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 int main()
 {
+	std::ifstream file("../code.c", std::ios::binary | std::ios::in);
+	std::string code{(std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()};
+
 	// Obtener los tokens usando tu función getTokens
-	std::vector<Token> tokens = getTokens("int main(){return 0; int b = 3; } void xd(int a, int b){return 32;}");
+	std::vector<Token> tokens = getTokens(code);
 	
 	try
 	{

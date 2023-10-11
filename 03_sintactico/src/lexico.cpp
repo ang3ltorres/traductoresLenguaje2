@@ -113,6 +113,14 @@ static bool valid_id(const std::string& nombre)
 	return std::regex_match(nombre, pattern);
 }
 
+static bool isOnlySpaces(const std::string& string)
+{
+	if (string.empty())
+		return true;
+
+	return std::all_of(string.begin(), string.end(), [](char c){ return std::isspace(c); });
+}
+
 static std::vector<StringNumber> splitCode(const std::string& code)
 {
 	std::vector<StringNumber> v, v_aux;
@@ -121,7 +129,10 @@ static std::vector<StringNumber> splitCode(const std::string& code)
 	/*** Enumerar lineas ***/
 	std::stringstream ss(code);
 	for (unsigned int line = 1; std::getline(ss, string_aux); line++)
-		v_aux.push_back({string_aux, line});
+	{
+		if (!isOnlySpaces(string_aux))
+			v_aux.push_back({string_aux, line});
+	}
 	
 	v.clear();
 	v.swap(v_aux);
