@@ -9,7 +9,7 @@
 <assignment>      			-> <identifier> = <expression> ;
 <logicalExpression> 		-> <logicalTerm> | <logicalTerm> || <logicalExpression>
 <logicalTerm>      			-> <relationalExpression> | <relationalExpression> && <logicalTerm>
-<relationalExpression> 		-> <expression> | <expression> <relationalOperator> <expression>
+<relationalExpression> 		-> <expression> <relationalOperator> <expression>
 <expression>      			-> <term> | <term> + <expression> | <term> - <expression>
 <term>            			-> <factor> | <factor> * <term> | <factor> / <term>
 <factor>          			-> <identifier> | <number> | ( <expression> )

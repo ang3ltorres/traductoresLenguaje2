@@ -4,27 +4,6 @@
 #include <algorithm>
 #include <format>
 
-static bool isOperator(Token::Type type)
-{
-	static const std::vector<Token::Type> operators =
-	{
-		Token::Type::Addition,
-		Token::Type::Subtraction,
-		Token::Type::Multiplication,
-		Token::Type::Division,
-		Token::Type::LogicalOR,
-		Token::Type::LogicalAND,
-		Token::Type::LessThan,
-		Token::Type::GreaterThan,
-		Token::Type::LessThanOrEqual,
-		Token::Type::GreaterThanOrEqual,
-		Token::Type::EqualTo,
-		Token::Type::NotEqualTo,
-	};
-
-	return std::any_of(operators.begin(), operators.end(), [type](Token::Type dataType){ return type == dataType; });
-}
-
 static bool isDataType(Token::Type type)
 {
 	static const std::vector<Token::Type> dataTypes =
@@ -422,24 +401,30 @@ Node Parser::parseLogicalTerm()
 
 Node Parser::parseRelationalExpression()
 {
+	static const auto isRelationalOperator = [](Token token) -> NodeBinaryExpression::Operation
+	{
+		switch (token.type)
+		{
+			case Token::Type::LessThan:				return NodeBinaryExpression::Operation::LessThan;
+			case Token::Type::GreaterThan:			return NodeBinaryExpression::Operation::GreaterThan;
+			case Token::Type::LessThanOrEqual:		return NodeBinaryExpression::Operation::LessThanOrEqual;
+			case Token::Type::GreaterThanOrEqual:	return NodeBinaryExpression::Operation::GreaterThanOrEqual;
+			case Token::Type::EqualTo:				return NodeBinaryExpression::Operation::EqualTo;
+			case Token::Type::NotEqualTo:			return NodeBinaryExpression::Operation::NotEqualTo;
+			default:								throw std::runtime_error(std::format("Se esperaba un operador relacional.\n\tLinea: {:d}\n", token.line));
+		}
+	};
+
 	Node left = parseExpression();
 
-	if (notEnd())
-	{
-		if (isOperator(tokens[index].type))
-		{
-			Token op = getNextToken();
+	Token t = getNextToken();
+	NodeBinaryExpression::Operation op = isRelationalOperator(t);
 
-			Node right = parseExpression();
-			return std::make_shared<NodeRelationalExpression>(right->lineNumber,
-				std::make_shared<NodeBinaryExpression>(NodeBinaryExpression::toOperation(op), left, right)
-			);
-		}
-		else
-			return std::make_shared<NodeRelationalExpression>(left->lineNumber, left);
-	}
-	else
-		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
+	Node right = parseExpression();
+
+	return std::make_shared<NodeRelationalExpression>(right->lineNumber,
+		std::make_shared<NodeBinaryExpression>(op, left, right)
+	);
 }
 
 Node Parser::parseIfStatement()
