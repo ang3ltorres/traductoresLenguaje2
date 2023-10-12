@@ -165,7 +165,7 @@ struct NodeLogicalExpression : public ASTNode
 {
 	NodeLogicalExpression(unsigned int line, Node logicalExpression);
 
-	// LogicalTerm, BinaryExpression<LogicalTerm || LogicalExpression>
+	// LogicalTerm, BinaryExpression<LogicalTerm || LogicalExpression>, LogicalExpression
 	Node logicalExpression;
 };
 

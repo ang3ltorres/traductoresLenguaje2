@@ -355,6 +355,24 @@ std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
 
 Node Parser::parseLogicalExpression()
 {
+	if (notEnd())
+	{
+		if (tokens[index].type == Token::Type::ParenthesisOpen)
+		{
+			index++; // Saltar el parentesis (
+
+			Node logicalExpression = parseLogicalExpression();
+
+			if (notEnd() && tokens[index].type == Token::Type::ParenthesisClose)
+			{
+				index++; // Saltar el parentesis )
+				return logicalExpression;
+			}
+			else
+				throw std::runtime_error(std::format("Se esperaba un parentesis de cierre.\n\tLinea: {:d}\n", tokens[index].line));
+		}
+	}
+
 	Node logicalTerm = parseLogicalTerm();
 
 	if (notEnd())

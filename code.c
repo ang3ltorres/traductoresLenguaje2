@@ -4,7 +4,7 @@ int main (int a) {
 	char letra;
 	letra = 8 / (2+3);
 
-	if (l < o) {
+	if ((((l < o)))) {
 	
 		short xd = letra + 2;
 	}
