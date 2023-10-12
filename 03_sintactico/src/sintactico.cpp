@@ -4,6 +4,21 @@
 #include <algorithm>
 #include <format>
 
+static bool isRelationalOperator(Token::Type type)
+{
+	static const std::vector<Token::Type> relationalOperators =
+	{
+		Token::Type::LessThan,
+		Token::Type::GreaterThan,
+		Token::Type::LessThanOrEqual,
+		Token::Type::GreaterThanOrEqual,
+		Token::Type::EqualTo,
+		Token::Type::NotEqualTo,
+	};
+
+	return std::any_of(relationalOperators.begin(), relationalOperators.end(), [type](Token::Type dataType){ return type == dataType; });
+}
+
 NodeIdentifier::NodeIdentifier(unsigned int line, const std::string& name)
 : ASTNode{ASTNode::Type::Identifier, line}, name(name) {}
 
@@ -16,50 +31,56 @@ NodeFloatingPointNumber::NodeFloatingPointNumber(unsigned int line, float value)
 NodeDataType::NodeDataType(unsigned int line, NodeDataType::Type dataType)
 : ASTNode{ASTNode::Type::DataType, line}, dataType(dataType) {}
 
-NodeArgument::NodeArgument(unsigned int line, std::shared_ptr<ASTNode> dataType, std::shared_ptr<ASTNode> identifier)
+NodeArgument::NodeArgument(unsigned int line, Node dataType, Node identifier)
 : ASTNode{ASTNode::Type::Argument, line}, dataType(dataType), identifier(identifier) {}
 
-NodeParamaters::NodeParamaters(unsigned int line, std::vector< std::shared_ptr<ASTNode> > args)
+NodeParamaters::NodeParamaters(unsigned int line, std::vector< Node > args)
 : ASTNode{ASTNode::Type::Parameters, line}, args(args) {}
 
 NodeRelationalOperator::NodeRelationalOperator(unsigned int line, NodeRelationalOperator::Type operatorType)
 : ASTNode{ASTNode::Type::RelationalOperator, line}, operatorType(operatorType) {}
 
-NodeExpression::NodeExpression(std::shared_ptr<ASTNode> term)
+NodeExpression::NodeExpression(Node term)
 : ASTNode{ASTNode::Type::Expression, term->lineNumber}, term(term) {}
 
-NodeCondition::NodeCondition(unsigned int line, std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> op, std::shared_ptr<ASTNode> right)
-: ASTNode{ASTNode::Type::Condition, line}, left(left), op(op), right(right) {}
-
-NodeTerm::NodeTerm(std::shared_ptr<ASTNode> factor)
+NodeTerm::NodeTerm(Node factor)
 : ASTNode{ASTNode::Type::Term, factor->lineNumber}, factor(factor) {}
 
-NodeReturnStatement::NodeReturnStatement(unsigned int line, std::shared_ptr<ASTNode> expression)
+NodeReturnStatement::NodeReturnStatement(unsigned int line, Node expression)
 : ASTNode{ASTNode::Type::ReturnStatement, line}, expression(expression) {}
 
-NodeBinaryExpression::NodeBinaryExpression(Operation operation, std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> right)
+NodeBinaryExpression::NodeBinaryExpression(Operation operation, Node left, Node right)
 : ASTNode{ASTNode::Type::BinaryExpression, left->lineNumber}, operation(operation), left(left), right(right) {}
 
-NodeFactor::NodeFactor(std::shared_ptr<ASTNode> factor)
+NodeFactor::NodeFactor(Node factor)
 : ASTNode{ASTNode::Type::Factor, factor->lineNumber}, factor(factor) {}
 
-NodeAssignment::NodeAssignment(std::shared_ptr<ASTNode> var, std::shared_ptr<ASTNode> exp)
+NodeAssignment::NodeAssignment(Node var, Node exp)
 : ASTNode{ASTNode::Type::Assignament, var->lineNumber}, var(var), exp(exp) {}
 
-NodeDeclaration::NodeDeclaration(unsigned int line, std::shared_ptr<ASTNode> dataType, std::shared_ptr<ASTNode> node)
+NodeDeclaration::NodeDeclaration(unsigned int line, Node dataType, Node node)
 : ASTNode{ASTNode::Type::Declaration, line}, dataType(dataType), node(node) {}
 
-NodeIfStatement::NodeIfStatement(unsigned int line, std::shared_ptr<ASTNode> condition, std::vector< std::shared_ptr<ASTNode> > statements)
-: ASTNode{ASTNode::Type::IfStatement, line}, condition(condition), statements(statements) {}
+NodeLogicalExpression::NodeLogicalExpression(unsigned int line, Node logicalExpression)
+: ASTNode{ASTNode::Type::LogicalExpression, line}, logicalExpression(logicalExpression) {}
 
-NodeStatement::NodeStatement(unsigned int line, std::shared_ptr<ASTNode> statement)
+NodeLogicalTerm::NodeLogicalTerm(unsigned int line, Node logicalTerm)
+: ASTNode{ASTNode::Type::LogicalTerm, line}, logicalTerm(logicalTerm) {}
+
+NodeRelationalExpression::NodeRelationalExpression(unsigned int line, Node left, Node op, Node right)
+: ASTNode{ASTNode::Type::RelationalExpression, line}, left(left), right(right), op(op) {}
+
+NodeIfStatement::NodeIfStatement(unsigned int line, Node expression, std::vector< Node > statements)
+: ASTNode{ASTNode::Type::IfStatement, line}, expression(expression), statements(statements) {}
+
+NodeStatement::NodeStatement(unsigned int line, Node statement)
 : ASTNode{ASTNode::Type::Statement, line}, statement(statement) {}
 
 NodeFunction::NodeFunction(unsigned int line,
-	std::shared_ptr<ASTNode> datatype,
-	std::shared_ptr<ASTNode> identifier,
-	std::shared_ptr<ASTNode> parameters,
-	std::vector< std::shared_ptr<ASTNode> > statements
+	Node datatype,
+	Node identifier,
+	Node parameters,
+	std::vector< Node > statements
 )
 : ASTNode{ASTNode::Type::Function, line}, datatype(datatype), identifier(identifier), parameters(parameters), statements(statements) {}
 
@@ -106,7 +127,7 @@ std::shared_ptr<NodeNumber> Parser::parseNumber()
 		throw std::runtime_error("Se esperaba un numero.");
 }
 
-std::shared_ptr<ASTNode> Parser::parseDataType()
+Node Parser::parseDataType()
 {
 	Token t = getNextToken();
 
@@ -123,7 +144,7 @@ std::shared_ptr<ASTNode> Parser::parseDataType()
 	}
 }
 
-std::shared_ptr<ASTNode> Parser::parseRelationalOperator()
+Node Parser::parseRelationalOperator()
 {
 	Token t = getNextToken();
 	
@@ -139,13 +160,13 @@ std::shared_ptr<ASTNode> Parser::parseRelationalOperator()
 	}
 }
 
-std::shared_ptr<ASTNode> Parser::parseExpression()
+Node Parser::parseExpression()
 {
-	std::shared_ptr<ASTNode> leftTerm = parseTerm();
+	Node leftTerm = parseTerm();
 	if (notEnd() && (tokens[index].type == Token::Type::Addition || tokens[index].type == Token::Type::Subtraction))
 	{
 		Token op = getNextToken();
-		std::shared_ptr<ASTNode> rightTerm = parseExpression();
+		Node rightTerm = parseExpression();
 		return std::make_shared<NodeBinaryExpression>
 		(
 			(op.type == Token::Type::Addition) ? NodeBinaryExpression::Operation::Addition : NodeBinaryExpression::Operation::Subtraction,
@@ -157,14 +178,14 @@ std::shared_ptr<ASTNode> Parser::parseExpression()
 	return leftTerm;
 }
 
-std::shared_ptr<ASTNode> Parser::parseTerm()
+Node Parser::parseTerm()
 {
-	std::shared_ptr<ASTNode> factor = parseFactor();
+	Node factor = parseFactor();
 
 	if (notEnd() && (tokens[index].type == Token::Type::Multiplication || tokens[index].type == Token::Type::Division))
 	{
 		Token op = getNextToken();
-		std::shared_ptr<ASTNode> right = parseTerm();
+		Node right = parseTerm();
 		return std::make_shared<NodeBinaryExpression>
 		(
 			(op.type == Token::Type::Multiplication) ? NodeBinaryExpression::Operation::Multiplication : NodeBinaryExpression::Operation::Division,
@@ -176,7 +197,7 @@ std::shared_ptr<ASTNode> Parser::parseTerm()
 	return factor;
 }
 
-std::shared_ptr<ASTNode> Parser::parseFactor()
+Node Parser::parseFactor()
 {
 	if (notEnd())
 	{
@@ -189,7 +210,7 @@ std::shared_ptr<ASTNode> Parser::parseFactor()
 		else if (token.type == Token::Type::ParenthesisOpen)
 		{
 			index++; // Saltarnos el (
-			std::shared_ptr<ASTNode> expression = parseExpression();
+			Node expression = parseExpression();
 			if (notEnd() && tokens[index].type == Token::Type::ParenthesisClose)
 			{
 				index++; // Saltarnos el )
@@ -205,15 +226,15 @@ std::shared_ptr<ASTNode> Parser::parseFactor()
 	throw std::runtime_error("Factor invalido.");
 }
 
-std::shared_ptr<ASTNode> Parser::parseArgument()
+Node Parser::parseArgument()
 {
-	std::shared_ptr<ASTNode> dataType = parseDataType();
-	std::shared_ptr<ASTNode> identifier = parseIdentifier();
+	Node dataType = parseDataType();
+	Node identifier = parseIdentifier();
 
 	return std::make_shared<NodeArgument>(dataType->lineNumber, dataType, identifier);
 }
 
-std::shared_ptr<ASTNode> Parser::parseParameters()
+Node Parser::parseParameters()
 {
 	auto const isDataType = [](Token::Type type) -> bool
 	{
@@ -231,7 +252,7 @@ std::shared_ptr<ASTNode> Parser::parseParameters()
 		return std::any_of(dataTypes.begin(), dataTypes.end(), [type](Token::Type dataType){ return type == dataType; });
 	};
 
-	std::vector< std::shared_ptr<ASTNode> > args;
+	std::vector< Node > args;
 
 	if (notEnd())
 	{
@@ -243,7 +264,7 @@ std::shared_ptr<ASTNode> Parser::parseParameters()
 
 	while (true)
 	{
-		std::shared_ptr<ASTNode> arg = parseArgument();
+		Node arg = parseArgument();
 		args.push_back(arg);
 
 		if (notEnd())
@@ -265,63 +286,26 @@ std::shared_ptr<ASTNode> Parser::parseParameters()
 	}
 }
 
-std::shared_ptr<ASTNode> Parser::parseCondition()
-{
-	std::shared_ptr<ASTNode> left = parseExpression();
+// TODO
+// Reutilizar en parseRelationalOperator()
+// Usar NodeBinaryExpression
+/*
+	En plan validar: if ( <expression> ) { <statement>* }
+	if (a + b){}
+	if (a) {}
+	if ((a > b) && (c - 9)) {}
 
-	// TODO
-	// Reutilizar en parseRelationalOperator()
-	// Usar NodeBinaryExpression
-	/*
-		En plan validar: if ( <expression> ) { <statement>* }
-		if (a + b){}
-		if (a) {}
-		if ((a > b) && (c - 9)) {}
+	Agregar a enum class Operation los &&, y asi
+	Eliminar NodeCondition ?? y usar NodeBinaryExpression
+*/
 
-		Agregar a enum class Operation los &&, y asi
-		Eliminar NodeCondition ?? y usar NodeBinaryExpression
-	*/
-
-	auto const isRelationalOperator = [](Token::Type type) -> bool
-	{
-		static const std::vector<Token::Type> relationalOperators =
-		{
-			Token::Type::LessThan,
-			Token::Type::GreaterThan,
-			Token::Type::LessThanOrEqual,
-			Token::Type::GreaterThanOrEqual,
-			Token::Type::EqualTo,
-			Token::Type::NotEqualTo,
-		};
-
-		return std::any_of(relationalOperators.begin(), relationalOperators.end(), [type](Token::Type dataType){ return type == dataType; });
-	};
-
-	if (notEnd())
-	{
-		if (isRelationalOperator(tokens[index].type))
-		{
-			std::shared_ptr<ASTNode> op = parseRelationalOperator();
-			std::shared_ptr<ASTNode> right = parseExpression();
-
-			return std::make_shared<NodeCondition>(left->lineNumber, left, op, right);
-		}
-		else
-		{
-			return std::make_shared<NodeCondition>(left->lineNumber, left, nullptr, nullptr);
-		}
-	}
-	else
-		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
-}
-
-std::shared_ptr<ASTNode> Parser::parseReturnStatement()
+Node Parser::parseReturnStatement()
 {
 	if (notEnd() && tokens[index].type == Token::Type::ReservedWordReturn)
 	{
 		index++; // Saltar el return
 
-		std::shared_ptr<ASTNode> expression = parseExpression();
+		Node expression = parseExpression();
 
 		if (notEnd() && tokens[index].type == Token::Type::Semicolon)
 		{
@@ -342,7 +326,7 @@ std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 	if (notEnd() && tokens[index].type == Token::Type::Assignment)
 	{
 		index++; // Saltarnos el =
-		std::shared_ptr<ASTNode> expression = parseExpression();
+		Node expression = parseExpression();
 
 		if (notEnd() && tokens[index].type == Token::Type::Semicolon)
 		{
@@ -358,8 +342,8 @@ std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 
 std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
 {
-	std::shared_ptr<ASTNode> dataType = parseDataType();
-	std::shared_ptr<ASTNode> identifier = parseIdentifier();
+	Node dataType = parseDataType();
+	Node identifier = parseIdentifier();
 
 	Token t = getNextToken();
 	if (t.type == Token::Type::Semicolon)
@@ -368,11 +352,11 @@ std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
 	}
 	else if (t.type == Token::Type::Assignment)
 	{
-		std::shared_ptr<ASTNode> expression = parseExpression();
+		Node expression = parseExpression();
 		t = getNextToken();
 		if (t.type == Token::Type::Semicolon)
 		{
-			std::shared_ptr<ASTNode> assignment = std::make_shared<NodeAssignment>(identifier, expression);
+			Node assignment = std::make_shared<NodeAssignment>(identifier, expression);
 
 			return std::make_shared<NodeDeclaration>(dataType->lineNumber, dataType, assignment);
 		}
@@ -383,7 +367,7 @@ std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
 	throw std::runtime_error(std::format("Se esperaba un operador de asignacion o un punto y coma.\n\tLinea: {:d}\n", identifier->lineNumber));
 }
 
-std::shared_ptr<ASTNode> Parser::parseIfStatement()
+Node Parser::parseIfStatement()
 {
 	unsigned int lineNumber;
 	Token t;
@@ -398,7 +382,7 @@ std::shared_ptr<ASTNode> Parser::parseIfStatement()
 	if (t.type != Token::Type::ParenthesisOpen)
 		throw std::runtime_error(std::format("Se esperaba un parentesis abre.\n\tLinea: {:d}\n", lineNumber));
 
-	std::shared_ptr<ASTNode> condition = parseCondition();
+	Node condition = parseExpression();
 
 	t = getNextToken();
 	lineNumber = t.line;
@@ -410,7 +394,7 @@ std::shared_ptr<ASTNode> Parser::parseIfStatement()
 		throw std::runtime_error(std::format("Se esperaba corchetes abre.\n\tLinea: {:d}\n", lineNumber));
 	
 	/******/
-	std::vector<std::shared_ptr<ASTNode>> statements;
+	std::vector<Node> statements;
 
 	t = getNextToken();
 	if (t.type == Token::Type::BraceClose)
@@ -421,7 +405,7 @@ std::shared_ptr<ASTNode> Parser::parseIfStatement()
 
 	while (true)
 	{
-		std::shared_ptr<ASTNode> statement = parseStatement();
+		Node statement = parseStatement();
 		statements.push_back(statement);
 
 		if (notEnd())
@@ -467,25 +451,25 @@ std::shared_ptr<NodeStatement> Parser::parseStatement()
 		// ReturnStatement
 		if (tokens[index].type == Token::Type::ReservedWordReturn)
 		{
-			std::shared_ptr<ASTNode> node = parseReturnStatement();
+			Node node = parseReturnStatement();
 			return std::make_shared<NodeStatement>(node->lineNumber, node);
 		}
 		// IfStatement
 		else if (tokens[index].type == Token::Type::ReservedWordIf)
 		{
-			std::shared_ptr<ASTNode> node = parseIfStatement();
+			Node node = parseIfStatement();
 			return std::make_shared<NodeStatement>(node->lineNumber, node);
 		}
 		// Assignment
 		else if (tokens[index].type == Token::Type::Identifier)
 		{
-			std::shared_ptr<ASTNode> node = parseAssignment();
+			Node node = parseAssignment();
 			return std::make_shared<NodeStatement>(node->lineNumber, node);
 		}
 		// Declaration
 		else if (isDataType(tokens[index].type))
 		{
-			std::shared_ptr<ASTNode> node = parseDeclaration();
+			Node node = parseDeclaration();
 			return std::make_shared<NodeStatement>(node->lineNumber, node);
 		}
 		else
@@ -499,21 +483,21 @@ std::shared_ptr<NodeFunction> Parser::parseFunction()
 {
 	Token t;
 
-	std::shared_ptr<ASTNode> dataType = parseDataType();
-	std::shared_ptr<ASTNode> identifier = parseIdentifier();
+	Node dataType = parseDataType();
+	Node identifier = parseIdentifier();
 
 	t = getNextToken();
 	if (t.type != Token::Type::ParenthesisOpen)
 		throw std::runtime_error(std::format("Se esperaba un parentesis abre.\n\tLinea: {:d}\n", identifier->lineNumber));
 
-	std::shared_ptr<ASTNode> parameters = parseParameters();
+	Node parameters = parseParameters();
 
 	t = getNextToken();
 	if (t.type != Token::Type::ParenthesisClose)
 		throw std::runtime_error(std::format("Se esperaba parentesis de cierre.\n\tLinea: {:d}\n", parameters->lineNumber));
 
 	/******/
-	std::vector<std::shared_ptr<ASTNode>> statements;
+	std::vector<Node> statements;
 
 	if (!(notEnd() && tokens[index].type == Token::Type::BraceOpen))
 		throw std::runtime_error(std::format("Se esperaba corchete abre.\n\tLinea: {:d}\n", t.line));
@@ -532,7 +516,7 @@ std::shared_ptr<NodeFunction> Parser::parseFunction()
 
 	while (true)
 	{
-		std::shared_ptr<ASTNode> statement = parseStatement();
+		Node statement = parseStatement();
 		statements.push_back(statement);
 
 		if (notEnd() && tokens[index].type == Token::Type::BraceClose)

@@ -13,11 +13,13 @@ struct ASTNode
 		Function,
 		Statement,
 		IfStatement,
+		LogicalExpression,
+		LogicalTerm,
+		RelationalExpression,
 		Assignament,
 		Declaration,
 		Identifier,
 		Expression,
-		Condition,
 		Argument,
 		Parameters,
 		Term,
@@ -33,6 +35,8 @@ struct ASTNode
 	ASTNode::Type type;
 	unsigned int lineNumber;
 };
+
+using Node = std::shared_ptr<ASTNode>;
 
 struct NodeIdentifier: public ASTNode
 {
@@ -71,17 +75,17 @@ struct NodeDataType: public ASTNode
 
 struct NodeArgument: public ASTNode
 {
-	NodeArgument(unsigned int line, std::shared_ptr<ASTNode> dataType, std::shared_ptr<ASTNode> identifier);
+	NodeArgument(unsigned int line, Node dataType, Node identifier);
 
-	std::shared_ptr<ASTNode> dataType;
-	std::shared_ptr<ASTNode> identifier;
+	Node dataType;
+	Node identifier;
 };
 
 struct NodeParamaters: public ASTNode
 {
-	NodeParamaters(unsigned int line, std::vector< std::shared_ptr<ASTNode> > args);
+	NodeParamaters(unsigned int line, std::vector< Node > args);
 
-	std::vector< std::shared_ptr<ASTNode> > args;
+	std::vector< Node > args;
 };
 
 struct NodeRelationalOperator: public ASTNode
@@ -102,35 +106,24 @@ struct NodeRelationalOperator: public ASTNode
 
 struct NodeExpression: public ASTNode
 {
-	NodeExpression(std::shared_ptr<ASTNode> term);
+	NodeExpression(Node term);
 
 	// Term, BinaryExpression
-	std::shared_ptr<ASTNode> term;
-};
-
-struct NodeCondition: public ASTNode
-{
-	NodeCondition(unsigned int line, std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> op, std::shared_ptr<ASTNode> right);
-
-	std::shared_ptr<ASTNode> left; // Expression
-
-	// Optional
-	std::shared_ptr<ASTNode> op; // RelationalOperator
-	std::shared_ptr<ASTNode> right; // Expression
+	Node term;
 };
 
 struct NodeTerm : public ASTNode
 {
-	NodeTerm(std::shared_ptr<ASTNode> factor);
+	NodeTerm(Node factor);
 
 	// Factor, BinaryExpression
-	std::shared_ptr<ASTNode> factor;
+	Node factor;
 };
 
 struct NodeReturnStatement : public ASTNode
 {
-	NodeReturnStatement(unsigned int line, std::shared_ptr<ASTNode> expression);
-	std::shared_ptr<ASTNode> expression;
+	NodeReturnStatement(unsigned int line, Node expression);
+	Node expression;
 };
 
 struct NodeBinaryExpression : public ASTNode
@@ -143,66 +136,94 @@ struct NodeBinaryExpression : public ASTNode
 		Division,
 	};
 
-	NodeBinaryExpression(Operation operation, std::shared_ptr<ASTNode> left, std::shared_ptr<ASTNode> right);
+	NodeBinaryExpression(Operation operation, Node left, Node right);
 	Operation operation;
-	std::shared_ptr<ASTNode> left;
-	std::shared_ptr<ASTNode> right;
+	Node left;
+	Node right;
 };
 
 struct NodeFactor : public ASTNode
 {
-	NodeFactor(std::shared_ptr<ASTNode> factor);
+	NodeFactor(Node factor);
 
 	// Identifier, Number, Expression
-	std::shared_ptr<ASTNode> factor;
+	Node factor;
 };
 
 struct NodeAssignment : public ASTNode
 {
-	NodeAssignment(std::shared_ptr<ASTNode> var, std::shared_ptr<ASTNode> exp);
-	std::shared_ptr<ASTNode> var;
-	std::shared_ptr<ASTNode> exp;
+	NodeAssignment(Node var, Node exp);
+	Node var;
+	Node exp;
 };
 
 struct NodeDeclaration : public ASTNode
 {
-	NodeDeclaration(unsigned int line, std::shared_ptr<ASTNode> dataType, std::shared_ptr<ASTNode> node);
+	NodeDeclaration(unsigned int line, Node dataType, Node node);
 
-	std::shared_ptr<ASTNode> dataType;
+	Node dataType;
 
 	// Identifier, Assignment
-	std::shared_ptr<ASTNode> node;
+	Node node;
+};
+
+struct NodeLogicalExpression : public ASTNode
+{
+	NodeLogicalExpression(unsigned int line, Node logicalExpression);
+
+	// LogicalTerm, BinaryExpression<LogicalExpression || LogicalTerm>
+	Node logicalExpression;
+};
+
+struct NodeLogicalTerm : public ASTNode
+{
+	NodeLogicalTerm(unsigned int line, Node logicalTerm);
+
+	// RelationalExpression, BinaryExpression<LogicalTerm && RelationalExpression>
+	Node logicalTerm;
+};
+
+struct NodeRelationalExpression : public ASTNode
+{
+	NodeRelationalExpression(unsigned int line, Node left, Node op, Node right);
+
+	// Expression
+	Node left;
+	Node right;
+
+	// RelationalOperator
+	Node op;
 };
 
 struct NodeIfStatement : public ASTNode
 {
-	NodeIfStatement(unsigned int line, std::shared_ptr<ASTNode> condition, std::vector< std::shared_ptr<ASTNode> > statements);
+	NodeIfStatement(unsigned int line, Node expression, std::vector< Node > statements);
 
-	std::shared_ptr<ASTNode> condition;
-	std::vector< std::shared_ptr<ASTNode> > statements;
+	Node expression;
+	std::vector< Node > statements;
 };
 
 struct NodeStatement : public ASTNode
 {
-	NodeStatement(unsigned int line, std::shared_ptr<ASTNode> statement);
+	NodeStatement(unsigned int line, Node statement);
 
 	// Declaration, Assignment, IfStatement, ReturnStatement
-	std::shared_ptr<ASTNode> statement;
+	Node statement;
 };
 
 struct NodeFunction : public ASTNode
 {
 	NodeFunction(unsigned int line,
-		std::shared_ptr<ASTNode> datatype,
-		std::shared_ptr<ASTNode> identifier,
-		std::shared_ptr<ASTNode> parameters,
-		std::vector< std::shared_ptr<ASTNode> > statements
+		Node datatype,
+		Node identifier,
+		Node parameters,
+		std::vector< Node > statements
 	);
 
-	std::shared_ptr<ASTNode> datatype;
-	std::shared_ptr<ASTNode> identifier;
-	std::shared_ptr<ASTNode> parameters;
-	std::vector< std::shared_ptr<ASTNode> > statements;
+	Node datatype;
+	Node identifier;
+	Node parameters;
+	std::vector< Node > statements;
 };
 
 struct NodeProgram : public ASTNode
@@ -226,18 +247,17 @@ public:
 
 	std::shared_ptr<NodeIdentifier> parseIdentifier();
 	std::shared_ptr<NodeNumber> parseNumber();
-	std::shared_ptr<ASTNode> parseDataType();
-	std::shared_ptr<ASTNode> parseRelationalOperator();
-	std::shared_ptr<ASTNode> parseExpression();
-	std::shared_ptr<ASTNode> parseTerm();
-	std::shared_ptr<ASTNode> parseFactor();
-	std::shared_ptr<ASTNode> parseArgument();
-	std::shared_ptr<ASTNode> parseParameters();
-	std::shared_ptr<ASTNode> parseCondition();
-	std::shared_ptr<ASTNode> parseReturnStatement();
+	Node parseDataType();
+	Node parseRelationalOperator();
+	Node parseExpression();
+	Node parseTerm();
+	Node parseFactor();
+	Node parseArgument();
+	Node parseParameters();
+	Node parseReturnStatement();
 	std::shared_ptr<NodeAssignment> parseAssignment();
 	std::shared_ptr<NodeDeclaration> parseDeclaration();
-	std::shared_ptr<ASTNode> parseIfStatement();
+	Node parseIfStatement();
 	std::shared_ptr<NodeStatement> parseStatement();
 	std::shared_ptr<NodeFunction> parseFunction();
 };
