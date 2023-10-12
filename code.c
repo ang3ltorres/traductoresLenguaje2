@@ -4,7 +4,7 @@ int main (int a) {
 	char letra;
 	letra = 8 / (2+3);
 
-	if (letra + letra / 2) {
+	if (letra > p) {
 	
 		short xd = letra + 2;
 	}
@@ -16,7 +16,7 @@ int main (int a) {
 	return 0;
 }
 
-void uwu()
+ uwu()
 {
 	
 }

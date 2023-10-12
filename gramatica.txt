@@ -7,9 +7,9 @@
 <argument>       			-> <dataType> <identifier>
 <declaration>     			-> <dataType> <identifier> ; | <dataType> <assignment> ;
 <assignment>      			-> <identifier> = <expression> ;
-<logicalExpression> 		-> <logicalTerm> | <logicalExpression> || <logicalTerm>
-<logicalTerm>      			-> <relationalExpression> | <logicalTerm> && <relationalExpression>
-<relationalExpression> 		-> <expression> <relationalOperator> <expression>
+<logicalExpression> 		-> <logicalTerm> | <logicalTerm> || <logicalExpression>
+<logicalTerm>      			-> <relationalExpression> | <relationalExpression> && <logicalTerm>
+<relationalExpression> 		-> <expression> | <expression> <relationalOperator> <expression>
 <expression>      			-> <term> | <term> + <expression> | <term> - <expression>
 <term>            			-> <factor> | <factor> * <term> | <factor> / <term>
 <factor>          			-> <identifier> | <number> | ( <expression> )

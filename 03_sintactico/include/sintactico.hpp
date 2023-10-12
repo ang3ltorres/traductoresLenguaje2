@@ -27,7 +27,6 @@ struct ASTNode
 		Number,
 		FloatingPointNumber,
 		DataType,
-		RelationalOperator,
 		ReturnStatement,
 		BinaryExpression,
 	};
@@ -88,22 +87,6 @@ struct NodeParamaters: public ASTNode
 	std::vector< Node > args;
 };
 
-struct NodeRelationalOperator: public ASTNode
-{
-	enum class Type : int
-	{
-		LessThan = 0,
-		GreaterThan,
-		LessThanOrEqual,
-		GreaterThanOrEqual,
-		EqualTo,
-		NotEqualTo,
-	};
-
-	NodeRelationalOperator(unsigned int line, NodeRelationalOperator::Type operatorType);
-	NodeRelationalOperator::Type operatorType;
-};
-
 struct NodeExpression: public ASTNode
 {
 	NodeExpression(Node term);
@@ -134,9 +117,20 @@ struct NodeBinaryExpression : public ASTNode
 		Subtraction,
 		Multiplication,
 		Division,
+		Or,
+		And,
+		LessThan,
+		GreaterThan,
+		LessThanOrEqual,
+		GreaterThanOrEqual,
+		EqualTo,
+		NotEqualTo,
 	};
 
 	NodeBinaryExpression(Operation operation, Node left, Node right);
+
+	static NodeBinaryExpression::Operation toOperation(Token token);
+
 	Operation operation;
 	Node left;
 	Node right;
@@ -171,7 +165,7 @@ struct NodeLogicalExpression : public ASTNode
 {
 	NodeLogicalExpression(unsigned int line, Node logicalExpression);
 
-	// LogicalTerm, BinaryExpression<LogicalExpression || LogicalTerm>
+	// LogicalTerm, BinaryExpression<LogicalTerm || LogicalExpression>
 	Node logicalExpression;
 };
 
@@ -179,27 +173,23 @@ struct NodeLogicalTerm : public ASTNode
 {
 	NodeLogicalTerm(unsigned int line, Node logicalTerm);
 
-	// RelationalExpression, BinaryExpression<LogicalTerm && RelationalExpression>
+	// RelationalExpression, BinaryExpression<RelationalExpression && LogicalTerm>
 	Node logicalTerm;
 };
 
 struct NodeRelationalExpression : public ASTNode
 {
-	NodeRelationalExpression(unsigned int line, Node left, Node op, Node right);
+	NodeRelationalExpression(unsigned int line, Node expression);
 
-	// Expression
-	Node left;
-	Node right;
-
-	// RelationalOperator
-	Node op;
+	// Expression, BinaryExpression<Expression (op) Expression>
+	Node expression;
 };
 
 struct NodeIfStatement : public ASTNode
 {
-	NodeIfStatement(unsigned int line, Node expression, std::vector< Node > statements);
+	NodeIfStatement(unsigned int line, Node logicalExpression, std::vector< Node > statements);
 
-	Node expression;
+	Node logicalExpression;
 	std::vector< Node > statements;
 };
 
@@ -248,7 +238,6 @@ public:
 	std::shared_ptr<NodeIdentifier> parseIdentifier();
 	std::shared_ptr<NodeNumber> parseNumber();
 	Node parseDataType();
-	Node parseRelationalOperator();
 	Node parseExpression();
 	Node parseTerm();
 	Node parseFactor();
@@ -257,6 +246,9 @@ public:
 	Node parseReturnStatement();
 	std::shared_ptr<NodeAssignment> parseAssignment();
 	std::shared_ptr<NodeDeclaration> parseDeclaration();
+	Node parseLogicalExpression();
+	Node parseLogicalTerm();
+	Node parseRelationalExpression();
 	Node parseIfStatement();
 	std::shared_ptr<NodeStatement> parseStatement();
 	std::shared_ptr<NodeFunction> parseFunction();

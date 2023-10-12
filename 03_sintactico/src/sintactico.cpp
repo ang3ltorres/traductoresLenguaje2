@@ -4,10 +4,16 @@
 #include <algorithm>
 #include <format>
 
-static bool isRelationalOperator(Token::Type type)
+static bool isOperator(Token::Type type)
 {
-	static const std::vector<Token::Type> relationalOperators =
+	static const std::vector<Token::Type> operators =
 	{
+		Token::Type::Addition,
+		Token::Type::Subtraction,
+		Token::Type::Multiplication,
+		Token::Type::Division,
+		Token::Type::LogicalOR,
+		Token::Type::LogicalAND,
 		Token::Type::LessThan,
 		Token::Type::GreaterThan,
 		Token::Type::LessThanOrEqual,
@@ -16,8 +22,24 @@ static bool isRelationalOperator(Token::Type type)
 		Token::Type::NotEqualTo,
 	};
 
-	return std::any_of(relationalOperators.begin(), relationalOperators.end(), [type](Token::Type dataType){ return type == dataType; });
+	return std::any_of(operators.begin(), operators.end(), [type](Token::Type dataType){ return type == dataType; });
 }
+
+static bool isDataType(Token::Type type)
+{
+	static const std::vector<Token::Type> dataTypes =
+	{
+		Token::Type::DataTypeVoid,
+		Token::Type::DataTypeChar,
+		Token::Type::DataTypeShort,
+		Token::Type::DataTypeInt,
+		Token::Type::DataTypeLong,
+		Token::Type::DataTypeFloat,
+		Token::Type::DataTypeBool,
+	};
+
+	return std::any_of(dataTypes.begin(), dataTypes.end(), [type](Token::Type dataType){ return type == dataType; });
+};
 
 NodeIdentifier::NodeIdentifier(unsigned int line, const std::string& name)
 : ASTNode{ASTNode::Type::Identifier, line}, name(name) {}
@@ -37,9 +59,6 @@ NodeArgument::NodeArgument(unsigned int line, Node dataType, Node identifier)
 NodeParamaters::NodeParamaters(unsigned int line, std::vector< Node > args)
 : ASTNode{ASTNode::Type::Parameters, line}, args(args) {}
 
-NodeRelationalOperator::NodeRelationalOperator(unsigned int line, NodeRelationalOperator::Type operatorType)
-: ASTNode{ASTNode::Type::RelationalOperator, line}, operatorType(operatorType) {}
-
 NodeExpression::NodeExpression(Node term)
 : ASTNode{ASTNode::Type::Expression, term->lineNumber}, term(term) {}
 
@@ -51,6 +70,26 @@ NodeReturnStatement::NodeReturnStatement(unsigned int line, Node expression)
 
 NodeBinaryExpression::NodeBinaryExpression(Operation operation, Node left, Node right)
 : ASTNode{ASTNode::Type::BinaryExpression, left->lineNumber}, operation(operation), left(left), right(right) {}
+
+NodeBinaryExpression::Operation NodeBinaryExpression::toOperation(Token token)
+{
+	switch (token.type)
+	{
+		case Token::Type::Addition:				return NodeBinaryExpression::Operation::Addition;
+		case Token::Type::Subtraction:			return NodeBinaryExpression::Operation::Subtraction;
+		case Token::Type::Multiplication:		return NodeBinaryExpression::Operation::Multiplication;
+		case Token::Type::Division:				return NodeBinaryExpression::Operation::Division;
+		case Token::Type::LogicalOR:			return NodeBinaryExpression::Operation::Or;
+		case Token::Type::LogicalAND:			return NodeBinaryExpression::Operation::And;
+		case Token::Type::LessThan:				return NodeBinaryExpression::Operation::LessThan;
+		case Token::Type::GreaterThan:			return NodeBinaryExpression::Operation::GreaterThan;
+		case Token::Type::LessThanOrEqual:		return NodeBinaryExpression::Operation::LessThanOrEqual;
+		case Token::Type::GreaterThanOrEqual:	return NodeBinaryExpression::Operation::GreaterThanOrEqual;
+		case Token::Type::EqualTo:				return NodeBinaryExpression::Operation::EqualTo;
+		case Token::Type::NotEqualTo:			return NodeBinaryExpression::Operation::NotEqualTo;
+		default:								throw std::runtime_error(std::format("Se esperaba un operador.\n\tLinea: {:d}\n", token.line));
+	}
+}
 
 NodeFactor::NodeFactor(Node factor)
 : ASTNode{ASTNode::Type::Factor, factor->lineNumber}, factor(factor) {}
@@ -67,11 +106,11 @@ NodeLogicalExpression::NodeLogicalExpression(unsigned int line, Node logicalExpr
 NodeLogicalTerm::NodeLogicalTerm(unsigned int line, Node logicalTerm)
 : ASTNode{ASTNode::Type::LogicalTerm, line}, logicalTerm(logicalTerm) {}
 
-NodeRelationalExpression::NodeRelationalExpression(unsigned int line, Node left, Node op, Node right)
-: ASTNode{ASTNode::Type::RelationalExpression, line}, left(left), right(right), op(op) {}
+NodeRelationalExpression::NodeRelationalExpression(unsigned int line, Node expression)
+: ASTNode{ASTNode::Type::RelationalExpression, line}, expression(expression) {}
 
-NodeIfStatement::NodeIfStatement(unsigned int line, Node expression, std::vector< Node > statements)
-: ASTNode{ASTNode::Type::IfStatement, line}, expression(expression), statements(statements) {}
+NodeIfStatement::NodeIfStatement(unsigned int line, Node logicalExpression, std::vector< Node > statements)
+: ASTNode{ASTNode::Type::IfStatement, line}, logicalExpression(logicalExpression), statements(statements) {}
 
 NodeStatement::NodeStatement(unsigned int line, Node statement)
 : ASTNode{ASTNode::Type::Statement, line}, statement(statement) {}
@@ -133,30 +172,14 @@ Node Parser::parseDataType()
 
 	switch (t.type)
 	{
-		case Token::Type::DataTypeVoid: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Void);
-		case Token::Type::DataTypeChar: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Char);
-		case Token::Type::DataTypeShort: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Short);
-		case Token::Type::DataTypeInt: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Int);
-		case Token::Type::DataTypeLong: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Long);
-		case Token::Type::DataTypeFloat: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Float);
-		case Token::Type::DataTypeBool: return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Bool);
-		default: throw std::runtime_error("Se esperaba un tipo de dato.");
-	}
-}
-
-Node Parser::parseRelationalOperator()
-{
-	Token t = getNextToken();
-	
-	switch (t.type)
-	{
-		case Token::Type::LessThan: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::LessThan);
-		case Token::Type::GreaterThan: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::GreaterThan);
-		case Token::Type::LessThanOrEqual: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::LessThanOrEqual);
-		case Token::Type::GreaterThanOrEqual: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::GreaterThanOrEqual);
-		case Token::Type::EqualTo: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::EqualTo);
-		case Token::Type::NotEqualTo: return std::make_shared<NodeRelationalOperator>(t.line, NodeRelationalOperator::Type::NotEqualTo);
-		default: throw std::runtime_error("Se esperaba un operador relacional.");
+		case Token::Type::DataTypeVoid:		return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Void);
+		case Token::Type::DataTypeChar:		return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Char);
+		case Token::Type::DataTypeShort:	return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Short);
+		case Token::Type::DataTypeInt:		return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Int);
+		case Token::Type::DataTypeLong:		return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Long);
+		case Token::Type::DataTypeFloat:	return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Float);
+		case Token::Type::DataTypeBool:		return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Bool);
+		default:							throw std::runtime_error(std::format("Se esperaba un tipo de dato.\n\tLinea: {:d}\n", t.line));
 	}
 }
 
@@ -236,22 +259,6 @@ Node Parser::parseArgument()
 
 Node Parser::parseParameters()
 {
-	auto const isDataType = [](Token::Type type) -> bool
-	{
-		static const std::vector<Token::Type> dataTypes =
-		{
-			Token::Type::DataTypeVoid,
-			Token::Type::DataTypeChar,
-			Token::Type::DataTypeShort,
-			Token::Type::DataTypeInt,
-			Token::Type::DataTypeLong,
-			Token::Type::DataTypeFloat,
-			Token::Type::DataTypeBool,
-		};
-
-		return std::any_of(dataTypes.begin(), dataTypes.end(), [type](Token::Type dataType){ return type == dataType; });
-	};
-
 	std::vector< Node > args;
 
 	if (notEnd())
@@ -367,6 +374,74 @@ std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
 	throw std::runtime_error(std::format("Se esperaba un operador de asignacion o un punto y coma.\n\tLinea: {:d}\n", identifier->lineNumber));
 }
 
+Node Parser::parseLogicalExpression()
+{
+	Node logicalTerm = parseLogicalTerm();
+
+	if (notEnd())
+	{
+		if (tokens[index].type == Token::Type::LogicalOR)
+		{
+			index++; // Saltarnos el ||
+
+			Node logicalExpression = parseLogicalExpression();
+
+			return std::make_shared<NodeLogicalExpression>(logicalExpression->lineNumber,
+				std::make_shared<NodeBinaryExpression>(NodeBinaryExpression::Operation::Or, logicalTerm, logicalExpression)
+			);
+		}
+		else
+			return std::make_shared<NodeLogicalExpression>(logicalTerm->lineNumber, logicalTerm);
+	}
+	else
+		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
+}
+
+Node Parser::parseLogicalTerm()
+{
+	Node relationalOperator = parseRelationalExpression();
+
+	if (notEnd())
+	{
+		if (tokens[index].type == Token::Type::LogicalAND)
+		{
+			index++; // Saltarnos el &&
+
+			Node logicalTerm = parseLogicalTerm();
+
+			return std::make_shared<NodeLogicalTerm>(logicalTerm->lineNumber,
+				std::make_shared<NodeBinaryExpression>(NodeBinaryExpression::Operation::And, relationalOperator, logicalTerm)
+			);
+		}
+		else
+			return std::make_shared<NodeLogicalExpression>(relationalOperator->lineNumber, relationalOperator);
+	}
+	else
+		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
+}
+
+Node Parser::parseRelationalExpression()
+{
+	Node left = parseExpression();
+
+	if (notEnd())
+	{
+		if (isOperator(tokens[index].type))
+		{
+			Token op = getNextToken();
+
+			Node right = parseExpression();
+			return std::make_shared<NodeRelationalExpression>(right->lineNumber,
+				std::make_shared<NodeBinaryExpression>(NodeBinaryExpression::toOperation(op), left, right)
+			);
+		}
+		else
+			return std::make_shared<NodeRelationalExpression>(left->lineNumber, left);
+	}
+	else
+		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
+}
+
 Node Parser::parseIfStatement()
 {
 	unsigned int lineNumber;
@@ -382,7 +457,7 @@ Node Parser::parseIfStatement()
 	if (t.type != Token::Type::ParenthesisOpen)
 		throw std::runtime_error(std::format("Se esperaba un parentesis abre.\n\tLinea: {:d}\n", lineNumber));
 
-	Node condition = parseExpression();
+	Node logicalExpression = parseLogicalExpression();
 
 	t = getNextToken();
 	lineNumber = t.line;
@@ -400,7 +475,7 @@ Node Parser::parseIfStatement()
 	if (t.type == Token::Type::BraceClose)
 	{
 		index++; // Saltarnos el }
-		return std::make_shared<NodeIfStatement>(t.line, condition, statements);
+		return std::make_shared<NodeIfStatement>(t.line, logicalExpression, statements);
 	}
 
 	while (true)
@@ -413,7 +488,7 @@ Node Parser::parseIfStatement()
 			if (tokens[index].type == Token::Type::BraceClose)
 			{
 				index++; // Saltarnos el }
-				return std::make_shared<NodeIfStatement>(statement->lineNumber, condition, statements);
+				return std::make_shared<NodeIfStatement>(statement->lineNumber, logicalExpression, statements);
 			}
 		}
 		else
@@ -429,22 +504,6 @@ std::shared_ptr<NodeStatement> Parser::parseStatement()
 	// SOPORTE DE FLOATS
 	// SOPORTE DE ELSE, ELSE IF
 	// isDataType esta 2 veces xd
-
-	auto const isDataType = [](Token::Type type) -> bool
-	{
-		static const std::vector<Token::Type> dataTypes =
-		{
-			Token::Type::DataTypeVoid,
-			Token::Type::DataTypeChar,
-			Token::Type::DataTypeShort,
-			Token::Type::DataTypeInt,
-			Token::Type::DataTypeLong,
-			Token::Type::DataTypeFloat,
-			Token::Type::DataTypeBool,
-		};
-
-		return std::any_of(dataTypes.begin(), dataTypes.end(), [type](Token::Type dataType){ return type == dataType; });
-	};
 
 	if (notEnd())
 	{
