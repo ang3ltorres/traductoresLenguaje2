@@ -13,9 +13,7 @@ struct ASTNode
 		Function,
 		Statement,
 		IfStatement,
-		LogicalExpression,
-		LogicalTerm,
-		RelationalExpression,
+		Condition,
 		Assignament,
 		Declaration,
 		Identifier,
@@ -95,6 +93,14 @@ struct NodeExpression: public ASTNode
 	Node term;
 };
 
+struct NodeCondition : public ASTNode
+{
+	NodeCondition(unsigned int line, Node condition);
+
+	// Expression, BinaryExpression<Expression (rop) Expression>
+	Node condition;
+};
+
 struct NodeTerm : public ASTNode
 {
 	NodeTerm(Node factor);
@@ -113,7 +119,8 @@ struct NodeBinaryExpression : public ASTNode
 {
 	enum class Operation : int
 	{
-		Addition = 0,
+		Unknown = 0,
+		Addition,
 		Subtraction,
 		Multiplication,
 		Division,
@@ -187,9 +194,9 @@ struct NodeRelationalExpression : public ASTNode
 
 struct NodeIfStatement : public ASTNode
 {
-	NodeIfStatement(unsigned int line, Node logicalExpression, std::vector< Node > statements);
+	NodeIfStatement(unsigned int line, Node condition, std::vector< Node > statements);
 
-	Node logicalExpression;
+	Node condition;
 	std::vector< Node > statements;
 };
 
@@ -246,9 +253,7 @@ public:
 	Node parseReturnStatement();
 	std::shared_ptr<NodeAssignment> parseAssignment();
 	std::shared_ptr<NodeDeclaration> parseDeclaration();
-	Node parseLogicalExpression();
-	Node parseLogicalTerm();
-	Node parseRelationalExpression();
+	Node parseCondition();
 	Node parseIfStatement();
 	std::shared_ptr<NodeStatement> parseStatement();
 	std::shared_ptr<NodeFunction> parseFunction();

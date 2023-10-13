@@ -4,13 +4,10 @@ int main (int a) {
 	char letra;
 	letra = 8 / (2+3);
 
-	if ((((l < o)))) {
+	if (((32 + 99) * 7 / 2) < 0) {
 	
 		short xd = letra + 2;
 	}
-
-
-	
 	
 	letra = 33;
 	letra = uwu;

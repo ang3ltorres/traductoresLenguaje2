@@ -1,20 +1,18 @@
-<program>         			-> <function> | <function> <program>
-<function>       			-> <dataType> <identifier> ( <parameters> ) { <statement>* }
-<statement>      			-> <declaration> | <assignment> | <ifStatement> | <returnStatement>
-<ifStatement>     			-> if ( <logicalExpression> ) { <statement>* } else { <statement>* } | if ( <logicalExpression> ) { <statement>* }
-<returnStatement> 			-> return <expression> ;
-<parameters>      			-> ε | <argument> | <argument> , <parameters>
-<argument>       			-> <dataType> <identifier>
-<declaration>     			-> <dataType> <identifier> ; | <dataType> <assignment> ;
-<assignment>      			-> <identifier> = <expression> ;
-<logicalExpression> 		-> <logicalTerm> | <logicalTerm> || <logicalExpression> | ( <logicalExpression> )
-<logicalTerm>      			-> <relationalExpression> | <relationalExpression> && <logicalTerm>
-<relationalExpression> 		-> <expression> <relationalOperator> <expression>
-<expression>      			-> <term> | <term> + <expression> | <term> - <expression>
-<term>            			-> <factor> | <factor> * <term> | <factor> / <term>
-<factor>          			-> <identifier> | <number> | ( <expression> )
-<relationalOperator> 		-> < | > | <= | >= | == | !=
-<dataType>        			-> int | float | char | void | double | bool
-<identifier>      			-> [a-zA-Z][a-zA-Z0-9_]*
-<floatingPointNumber> 		-> [0-9]+.[0-9]+
-<number>          			-> [0-9]+
+<program>                   -> <function> | <function> <program>
+<function>                  -> <dataType> <identifier> ( <parameters> ) { <statement>* }
+<statement>                 -> <declaration> | <assignment> | <ifStatement> | <returnStatement>
+<ifStatement>               -> if ( <condition> ) { <statement>* } else { <statement>* } | if ( <logicalExpression> ) { <statement>* }
+<returnStatement>           -> return <expression> ;
+<parameters>                -> ε | <argument> | <argument> , <parameters>
+<argument>                  -> <dataType> <identifier>
+<declaration>               -> <dataType> <identifier> ; | <dataType> <assignment> ;
+<assignment>                -> <identifier> = <expression> ;
+<condition>                 -> <expression> | <expression> <relationalOperator> <expression>
+<expression>                -> <term> | <term> + <expression> | <term> - <expression>
+<term>                      -> <factor> | <factor> * <term> | <factor> / <term>
+<factor>                    -> <identifier> | <number> | ( <expression> )
+<relationalOperator>        -> < | > | <= | >= | == | !=
+<dataType>                  -> int | float | char | void | double | bool
+<identifier>                -> [a-zA-Z][a-zA-Z0-9_]*
+<floatingPointNumber>       -> [0-9]+.[0-9]+
+<number>                    -> [0-9]+

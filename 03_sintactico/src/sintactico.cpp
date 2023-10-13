@@ -20,6 +20,20 @@ static bool isDataType(Token::Type type)
 	return std::any_of(dataTypes.begin(), dataTypes.end(), [type](Token::Type dataType){ return type == dataType; });
 };
 
+static NodeBinaryExpression::Operation isRelationalOperator(Token::Type type)
+{
+	switch (type)
+	{
+		case Token::Type::LessThan:					return NodeBinaryExpression::Operation::LessThan;
+		case Token::Type::GreaterThan:				return NodeBinaryExpression::Operation::GreaterThan;
+		case Token::Type::LessThanOrEqual:			return NodeBinaryExpression::Operation::LessThanOrEqual;
+		case Token::Type::GreaterThanOrEqual:		return NodeBinaryExpression::Operation::GreaterThanOrEqual;
+		case Token::Type::EqualTo:					return NodeBinaryExpression::Operation::EqualTo;
+		case Token::Type::NotEqualTo:				return NodeBinaryExpression::Operation::NotEqualTo;
+		default:									return NodeBinaryExpression::Operation::Unknown;
+	}
+}
+
 NodeIdentifier::NodeIdentifier(unsigned int line, const std::string& name)
 : ASTNode{ASTNode::Type::Identifier, line}, name(name) {}
 
@@ -40,6 +54,9 @@ NodeParamaters::NodeParamaters(unsigned int line, std::vector< Node > args)
 
 NodeExpression::NodeExpression(Node term)
 : ASTNode{ASTNode::Type::Expression, term->lineNumber}, term(term) {}
+
+NodeCondition::NodeCondition(unsigned int line, Node condition)
+: ASTNode{ASTNode::Type::Condition, line}, condition(condition) {}
 
 NodeTerm::NodeTerm(Node factor)
 : ASTNode{ASTNode::Type::Term, factor->lineNumber}, factor(factor) {}
@@ -79,17 +96,8 @@ NodeAssignment::NodeAssignment(Node var, Node exp)
 NodeDeclaration::NodeDeclaration(unsigned int line, Node dataType, Node node)
 : ASTNode{ASTNode::Type::Declaration, line}, dataType(dataType), node(node) {}
 
-NodeLogicalExpression::NodeLogicalExpression(unsigned int line, Node logicalExpression)
-: ASTNode{ASTNode::Type::LogicalExpression, line}, logicalExpression(logicalExpression) {}
-
-NodeLogicalTerm::NodeLogicalTerm(unsigned int line, Node logicalTerm)
-: ASTNode{ASTNode::Type::LogicalTerm, line}, logicalTerm(logicalTerm) {}
-
-NodeRelationalExpression::NodeRelationalExpression(unsigned int line, Node expression)
-: ASTNode{ASTNode::Type::RelationalExpression, line}, expression(expression) {}
-
-NodeIfStatement::NodeIfStatement(unsigned int line, Node logicalExpression, std::vector< Node > statements)
-: ASTNode{ASTNode::Type::IfStatement, line}, logicalExpression(logicalExpression), statements(statements) {}
+NodeIfStatement::NodeIfStatement(unsigned int line, Node condition, std::vector< Node > statements)
+: ASTNode{ASTNode::Type::IfStatement, line}, condition(condition), statements(statements) {}
 
 NodeStatement::NodeStatement(unsigned int line, Node statement)
 : ASTNode{ASTNode::Type::Statement, line}, statement(statement) {}
@@ -353,96 +361,30 @@ std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
 	throw std::runtime_error(std::format("Se esperaba un operador de asignacion o un punto y coma.\n\tLinea: {:d}\n", identifier->lineNumber));
 }
 
-Node Parser::parseLogicalExpression()
+Node Parser::parseCondition()
 {
-	if (notEnd())
-	{
-		if (tokens[index].type == Token::Type::ParenthesisOpen)
-		{
-			index++; // Saltar el parentesis (
-
-			Node logicalExpression = parseLogicalExpression();
-
-			if (notEnd() && tokens[index].type == Token::Type::ParenthesisClose)
-			{
-				index++; // Saltar el parentesis )
-				return logicalExpression;
-			}
-			else
-				throw std::runtime_error(std::format("Se esperaba un parentesis de cierre.\n\tLinea: {:d}\n", tokens[index].line));
-		}
-	}
-
-	Node logicalTerm = parseLogicalTerm();
-
-	if (notEnd())
-	{
-		if (tokens[index].type == Token::Type::LogicalOR)
-		{
-			index++; // Saltarnos el ||
-
-			Node logicalExpression = parseLogicalExpression();
-
-			return std::make_shared<NodeLogicalExpression>(logicalExpression->lineNumber,
-				std::make_shared<NodeBinaryExpression>(NodeBinaryExpression::Operation::Or, logicalTerm, logicalExpression)
-			);
-		}
-		else
-			return std::make_shared<NodeLogicalExpression>(logicalTerm->lineNumber, logicalTerm);
-	}
-	else
-		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
-}
-
-Node Parser::parseLogicalTerm()
-{
-	Node relationalOperator = parseRelationalExpression();
-
-	if (notEnd())
-	{
-		if (tokens[index].type == Token::Type::LogicalAND)
-		{
-			index++; // Saltarnos el &&
-
-			Node logicalTerm = parseLogicalTerm();
-
-			return std::make_shared<NodeLogicalTerm>(logicalTerm->lineNumber,
-				std::make_shared<NodeBinaryExpression>(NodeBinaryExpression::Operation::And, relationalOperator, logicalTerm)
-			);
-		}
-		else
-			return std::make_shared<NodeLogicalExpression>(relationalOperator->lineNumber, relationalOperator);
-	}
-	else
-		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
-}
-
-Node Parser::parseRelationalExpression()
-{
-	static const auto isRelationalOperator = [](Token token) -> NodeBinaryExpression::Operation
-	{
-		switch (token.type)
-		{
-			case Token::Type::LessThan:				return NodeBinaryExpression::Operation::LessThan;
-			case Token::Type::GreaterThan:			return NodeBinaryExpression::Operation::GreaterThan;
-			case Token::Type::LessThanOrEqual:		return NodeBinaryExpression::Operation::LessThanOrEqual;
-			case Token::Type::GreaterThanOrEqual:	return NodeBinaryExpression::Operation::GreaterThanOrEqual;
-			case Token::Type::EqualTo:				return NodeBinaryExpression::Operation::EqualTo;
-			case Token::Type::NotEqualTo:			return NodeBinaryExpression::Operation::NotEqualTo;
-			default:								throw std::runtime_error(std::format("Se esperaba un operador relacional.\n\tLinea: {:d}\n", token.line));
-		}
-	};
 
 	Node left = parseExpression();
 
-	Token t = getNextToken();
-	NodeBinaryExpression::Operation op = isRelationalOperator(t);
+	if (notEnd())
+	{
+		NodeBinaryExpression::Operation op = isRelationalOperator(tokens[index].type);
 
-	Node right = parseExpression();
+		if (op != NodeBinaryExpression::Operation::Unknown)
+		{
+			index++; // Saltarnos el op
 
-	return std::make_shared<NodeRelationalExpression>(right->lineNumber,
-		std::make_shared<NodeBinaryExpression>(op, left, right)
-	);
+			Node right = parseExpression();
+
+			return std::make_shared<NodeCondition>(right->lineNumber,
+				std::make_shared<NodeBinaryExpression>(op, left, right)
+			);
+		}
+		else
+			return std::make_shared<NodeCondition>(left->lineNumber, left);
+	}
+	else
+		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
 }
 
 Node Parser::parseIfStatement()
@@ -460,7 +402,7 @@ Node Parser::parseIfStatement()
 	if (t.type != Token::Type::ParenthesisOpen)
 		throw std::runtime_error(std::format("Se esperaba un parentesis abre.\n\tLinea: {:d}\n", lineNumber));
 
-	Node logicalExpression = parseLogicalExpression();
+	Node condition = parseCondition();
 
 	t = getNextToken();
 	lineNumber = t.line;
@@ -478,7 +420,7 @@ Node Parser::parseIfStatement()
 	if (t.type == Token::Type::BraceClose)
 	{
 		index++; // Saltarnos el }
-		return std::make_shared<NodeIfStatement>(t.line, logicalExpression, statements);
+		return std::make_shared<NodeIfStatement>(t.line, condition, statements);
 	}
 
 	while (true)
@@ -491,7 +433,7 @@ Node Parser::parseIfStatement()
 			if (tokens[index].type == Token::Type::BraceClose)
 			{
 				index++; // Saltarnos el }
-				return std::make_shared<NodeIfStatement>(statement->lineNumber, logicalExpression, statements);
+				return std::make_shared<NodeIfStatement>(statement->lineNumber, condition, statements);
 			}
 		}
 		else
