@@ -1,21 +1,19 @@
-int main (int a) {
-	int a = (32 + 99) * 7 / 2;
-
+int main () {
+	int num1 = (32 + 99) * 7 / 2;
 	char letra;
 	letra = 8 / (2+3);
 
-	if (((32 + 99) * 7 / 2) < 0) {
-	
-		short xd = letra + 2;
+	if (letra == 1 && num > 0)
+	{
+		short num2 = letra + 2;
 	}
 	
-	letra = 33;
-	letra = uwu;
+	letra = 33 + num1 * 2;
 
 	return 0;
 }
 
-void uwu()
+int suma(int a, int b)
 {
-	
+	return a + b;
 }
