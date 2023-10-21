@@ -34,6 +34,21 @@ static NodeBinaryExpression::Operation isRelationalOperator(Token::Type type)
 	}
 }
 
+ErrorCode::ErrorCode(bool error, unsigned int line, std::string errorStr)
+: error(error), line(line), errorStr(errorStr) {}
+
+const char* ErrorCode::what() const noexcept
+{
+	std::string aux;
+
+	if (error)
+		aux += std::format("{:s}\n\t{:d}\n", errorStr, line);
+	else
+		aux += "El programa no contiene errores!! :D\n";
+
+	return aux.c_str();
+}
+
 NodeIdentifier::NodeIdentifier(unsigned int line, const std::string& name)
 : ASTNode{ASTNode::Type::Identifier, line}, name(name) {}
 
@@ -537,20 +552,20 @@ std::shared_ptr<NodeFunction> Parser::parseFunction()
 
 #ifdef PYTHON_LIB
 
-	std::string parseTokens(const std::vector<Token>& tokens)
+	ErrorStruct parseTokens(const std::vector<Token>& tokens)
 	{
 		try
 		{
 			Parser parser(tokens);
 			std::shared_ptr<NodeProgram> program = parser.parseProgram();
-			return "El programa no contiene errores!! :D";
+			return {false, 0, "El programa no contiene errores!! :D"};
 		}
 		catch (const std::runtime_error& e)
 		{
 			std::string message;
 			message += "Error: ";
 			message += e.what();
-			return message;
+			return {true, 99, message};
 		}
 	}
 

@@ -5,6 +5,18 @@
 
 #include "lexico.hpp"
 
+class ErrorCode : public std::exception
+{
+public:
+	ErrorCode(bool error, unsigned int line, std::string errorStr);
+
+	bool error;
+	unsigned int line;
+	std::string errorStr;
+
+	const char* what() const noexcept override;
+};
+
 struct ASTNode
 {
 	enum class Type : int
@@ -255,7 +267,7 @@ public:
 };
 
 #ifdef PYTHON_LIB
-	
-	std::string parseTokens(const std::vector<Token>& tokens);
+
+	ErrorStruct parseTokens(const std::vector<Token>& tokens);
 
 #endif

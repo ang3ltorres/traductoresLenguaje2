@@ -82,7 +82,7 @@ class MainWindow(QMainWindow):
 
 		# errorBox
 		self.errorsBox.clear()
-		self.errorsBox.setPlainText(parse_tokens(tokens))
+		self.errorsBox.setPlainText(parse_tokens(tokens).error_str)
 
 def main():
 	app = QApplication(sys.argv)

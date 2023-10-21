@@ -78,6 +78,11 @@
 
 		m.def("get_tokens", &getTokens, "Obtener Tokens a partir de una string");
 
+		py::class_<ErrorStruct>(m, "ErrorStruct")
+			.def_readonly("error", &ErrorStruct::error)
+			.def_readonly("line", &ErrorStruct::line)
+			.def_readonly("error_str", &ErrorStruct::errorStr);
+
 		m.def("parse_tokens", &parseTokens, "Analizar sintacticamente una lista de tokens");
 	}
 
