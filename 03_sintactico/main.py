@@ -2,7 +2,7 @@ import os
 import sys
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
-from sintactico import get_tokens, parse_tokens
+from sintactico import get_tokens, parse_tokens, ErrorCode
 
 class MainWindow(QMainWindow):
 	def __init__(self):
@@ -81,8 +81,14 @@ class MainWindow(QMainWindow):
 			self.tabla.setItem(row_pos, 2, QTableWidgetItem(str(tokens[i].token.value)))
 
 		# errorBox
+		error_code = parse_tokens(tokens)
+
 		self.errorsBox.clear()
-		self.errorsBox.setPlainText(parse_tokens(tokens).error_str)
+
+		if (error_code.line == 0):
+			self.errorsBox.setPlainText(error_code.error_str)
+		else:
+			self.errorsBox.setPlainText(error_code.what())
 
 def main():
 	app = QApplication(sys.argv)

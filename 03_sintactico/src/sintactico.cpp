@@ -34,18 +34,13 @@ static NodeBinaryExpression::Operation isRelationalOperator(Token::Type type)
 	}
 }
 
-ErrorCode::ErrorCode(bool error, unsigned int line, std::string errorStr)
-: error(error), line(line), errorStr(errorStr) {}
+ErrorCode::ErrorCode(unsigned int line, std::string errorStr)
+: line(line), errorStr(errorStr) {}
 
 const char* ErrorCode::what() const noexcept
 {
 	std::string aux;
-
-	if (error)
-		aux += std::format("{:s}\n\t{:d}\n", errorStr, line);
-	else
-		aux += "El programa no contiene errores!! :D\n";
-
+	aux += std::format("Error: {:s}\n\tLinea: {:d}\n", errorStr, line);
 	return aux.c_str();
 }
 
@@ -95,7 +90,7 @@ NodeBinaryExpression::Operation NodeBinaryExpression::toOperation(Token token)
 		case Token::Type::GreaterThanOrEqual:	return NodeBinaryExpression::Operation::GreaterThanOrEqual;
 		case Token::Type::EqualTo:				return NodeBinaryExpression::Operation::EqualTo;
 		case Token::Type::NotEqualTo:			return NodeBinaryExpression::Operation::NotEqualTo;
-		default:								throw std::runtime_error(std::format("Se esperaba un operador.\n\tLinea: {:d}\n", token.line));
+		default:								throw ErrorCode(token.line, "Se esperaba un operador");
 	}
 }
 
@@ -144,7 +139,7 @@ Token Parser::getNextToken()
 	if (notEnd())
 		return tokens[index++];
 	else
-		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
+		throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
 }
 
 std::shared_ptr<NodeIdentifier> Parser::parseIdentifier()
@@ -153,7 +148,7 @@ std::shared_ptr<NodeIdentifier> Parser::parseIdentifier()
 	if (t.type == Token::Type::Identifier)
 		return std::make_shared<NodeIdentifier>(t.line, t.lexema);
 	else
-		throw std::runtime_error("Se esperaba un identificador.");
+		throw ErrorCode(t.line, "Se esperaba un identificador");
 }
 
 std::shared_ptr<NodeNumber> Parser::parseNumber()
@@ -164,7 +159,7 @@ std::shared_ptr<NodeNumber> Parser::parseNumber()
 	else if (t.type == Token::Type::FloatingPointNumber)
 		return std::make_shared<NodeNumber>(t.line, std::stof(t.lexema), true);
 	else
-		throw std::runtime_error("Se esperaba un numero.");
+		throw ErrorCode(t.line, "Se esperaba un numero");
 }
 
 Node Parser::parseDataType()
@@ -180,7 +175,7 @@ Node Parser::parseDataType()
 		case Token::Type::DataTypeLong:		return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Long);
 		case Token::Type::DataTypeFloat:	return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Float);
 		case Token::Type::DataTypeBool:		return std::make_shared<NodeDataType>(t.line, NodeDataType::Type::Bool);
-		default:							throw std::runtime_error(std::format("Se esperaba un tipo de dato.\n\tLinea: {:d}\n", t.line));
+		default:							throw ErrorCode(t.line, "Se esperaba un tipo de dato");
 	}
 }
 
@@ -241,13 +236,13 @@ Node Parser::parseFactor()
 				return expression;
 			}
 			else
-				throw std::runtime_error(std::format("Se esperaba un parentesis de cierre.\n\tLinea: {:d}\n", tokens[index].line));
+				throw ErrorCode(tokens[index].line, "Se esperaba un parentesis de cierre");
 		}
 		else
-			throw std::runtime_error(std::format("Se esperaba una expresion.\n\tLinea: {:d}\n", tokens[index-1].line));
+			throw ErrorCode(tokens[index-1].line, "Se esperaba una expresion");
 	}
 
-	throw std::runtime_error("Factor invalido.");
+	throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
 }
 
 Node Parser::parseArgument()
@@ -267,7 +262,7 @@ Node Parser::parseParameters()
 		if (tokens[index].type == Token::Type::ParenthesisClose)
 			return std::make_shared<NodeParamaters>(tokens[index].line, args);
 		else if (!isDataType(tokens[index].type))
-			throw std::runtime_error(std::format("Se esperaba parentesis de cierre o una lista de argumentos.\n\tLinea: {:d}\n", tokens[index-1].line));
+			throw ErrorCode(tokens[index-1].line, "Se esperaba parentesis de cierre o una lista de argumentos");
 	}
 
 	while (true)
@@ -287,10 +282,10 @@ Node Parser::parseParameters()
 				continue;
 			}
 			else
-				throw std::runtime_error(std::format("Se esperaba un parentesis de cierre o una coma.\n\tLinea: {:d}\n", arg->lineNumber));
+				throw ErrorCode(arg->lineNumber, "Se esperaba un parentesis de cierre o una coma");
 		}
 		else
-			throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
+			throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
 	}
 }
 
@@ -309,22 +304,31 @@ Node Parser::parseParameters()
 
 Node Parser::parseReturnStatement()
 {
-	if (notEnd() && tokens[index].type == Token::Type::ReservedWordReturn)
+	if (notEnd())
 	{
-		index++; // Saltar el return
-
-		Node expression = parseExpression();
-
-		if (notEnd() && tokens[index].type == Token::Type::Semicolon)
+		if (tokens[index].type == Token::Type::ReservedWordReturn)
 		{
-			index++; // Saltarnos el ;
-			return std::make_shared<NodeReturnStatement>(tokens[index].line, expression);
+			index++; // Saltar el return
+			Node expression = parseExpression();
+
+			if (notEnd())
+			{
+				if (tokens[index].type == Token::Type::Semicolon)
+				{
+					index++; // Saltarnos el ;
+					return std::make_shared<NodeReturnStatement>(tokens[index].line, expression);
+				}
+				else
+					throw ErrorCode(expression->lineNumber, "Se esperaba un punto y coma");
+			}
+			else
+				throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
 		}
 		else
-			throw std::runtime_error(std::format("Se esperaba un punto y coma.\n\tLinea: {:d}\n", expression->lineNumber));
+			throw ErrorCode(tokens[index].line, "Se esperaba un return");
 	}
 	else
-		throw std::runtime_error("Se esperaba un return.");
+		throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
 }
 
 std::shared_ptr<NodeAssignment> Parser::parseAssignment()
@@ -342,10 +346,10 @@ std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 			return std::make_shared<NodeAssignment>(identifier, expression);
 		}
 		else
-			throw std::runtime_error(std::format("Se esperaba un punto y coma.\n\tLinea: {:d}\n", expression->lineNumber));
+			throw ErrorCode(expression->lineNumber, "Se esperaba un punto y coma");
 	}
 	
-	throw std::runtime_error(std::format("Se esperaba un operador de asignacion.\n\tLinea: {:d}\n", identifier->lineNumber));
+	throw ErrorCode(identifier->lineNumber, "Se esperaba un operador de asignacion");
 }
 
 std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
@@ -369,10 +373,10 @@ std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
 			return std::make_shared<NodeDeclaration>(dataType->lineNumber, dataType, assignment);
 		}
 		else
-			throw std::runtime_error(std::format("Se esperaba un punto y coma.\n\tLinea: {:d}\n", expression->lineNumber));
+			throw ErrorCode(expression->lineNumber, "Se esperaba un punto y coma");
 	}
 	
-	throw std::runtime_error(std::format("Se esperaba un operador de asignacion o un punto y coma.\n\tLinea: {:d}\n", identifier->lineNumber));
+	throw ErrorCode(identifier->lineNumber, "Se esperaba un operador de asignacion o un punto y coma");
 }
 
 Node Parser::parseCondition()
@@ -398,7 +402,7 @@ Node Parser::parseCondition()
 			return std::make_shared<NodeCondition>(left->lineNumber, left);
 	}
 	else
-		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
+		throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
 }
 
 Node Parser::parseIfStatement()
@@ -409,23 +413,23 @@ Node Parser::parseIfStatement()
 	t = getNextToken();
 	lineNumber = t.line;
 	if (t.type != Token::Type::ReservedWordIf)
-		throw std::runtime_error("Se esperaba un if.");
+		throw ErrorCode(lineNumber, "Se esperaba un if");
 
 	t = getNextToken();
 	lineNumber = t.line;
 	if (t.type != Token::Type::ParenthesisOpen)
-		throw std::runtime_error(std::format("Se esperaba un parentesis abre.\n\tLinea: {:d}\n", lineNumber));
+		throw ErrorCode(lineNumber, "Se esperaba un parentesis abre");
 
 	Node condition = parseCondition();
 
 	t = getNextToken();
 	lineNumber = t.line;
 	if (t.type != Token::Type::ParenthesisClose)
-		throw std::runtime_error(std::format("Se esperaba un parentesis de cierre.\n\tLinea: {:d}\n", lineNumber));
+		throw ErrorCode(lineNumber, "Se esperaba un parentesis de cierre");
 
 	t = getNextToken();
 	if (t.type != Token::Type::BraceOpen)
-		throw std::runtime_error(std::format("Se esperaba corchetes abre.\n\tLinea: {:d}\n", lineNumber));
+		throw ErrorCode(lineNumber, "Se esperaba un corchetes abre");
 	
 	/******/
 	std::vector<Node> statements;
@@ -451,7 +455,7 @@ Node Parser::parseIfStatement()
 			}
 		}
 		else
-			throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
+			throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
 	}
 }
 
@@ -491,10 +495,10 @@ std::shared_ptr<NodeStatement> Parser::parseStatement()
 			return std::make_shared<NodeStatement>(node->lineNumber, node);
 		}
 		else
-			throw std::runtime_error("Se esperaba un statement (Declaracion, Asignacion, If, Return).");
+			throw ErrorCode(tokens[index].line, "Se esperaba un statement (Declaracion, Asignacion, If, Return)");
 	}
 	else
-		throw std::runtime_error(std::format("Se esperaba un statement (Declaracion, Asignacion, If, Return) o un corchete de cierre.\n\tLinea: {:d}\n", tokens[index-1].line));
+		throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
 }
 
 std::shared_ptr<NodeFunction> Parser::parseFunction()
@@ -506,23 +510,23 @@ std::shared_ptr<NodeFunction> Parser::parseFunction()
 
 	t = getNextToken();
 	if (t.type != Token::Type::ParenthesisOpen)
-		throw std::runtime_error(std::format("Se esperaba un parentesis abre.\n\tLinea: {:d}\n", identifier->lineNumber));
+		throw ErrorCode(identifier->lineNumber, "Se esperaba un parentesis abre");
 
 	Node parameters = parseParameters();
 
 	t = getNextToken();
 	if (t.type != Token::Type::ParenthesisClose)
-		throw std::runtime_error(std::format("Se esperaba parentesis de cierre.\n\tLinea: {:d}\n", parameters->lineNumber));
+		throw ErrorCode(parameters->lineNumber, "Se esperaba parentesis de cierre");
 
 	/******/
 	std::vector<Node> statements;
 
 	if (!(notEnd() && tokens[index].type == Token::Type::BraceOpen))
-		throw std::runtime_error(std::format("Se esperaba corchete abre.\n\tLinea: {:d}\n", t.line));
+		throw ErrorCode(t.line, "Se esperaba corchete abre");
 	index++; // Saltarnos el {
 
 	if (!notEnd())
-		throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
+		throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
 
 	if (tokens[index].type == Token::Type::BraceClose)
 	{
@@ -546,26 +550,23 @@ std::shared_ptr<NodeFunction> Parser::parseFunction()
 			continue;
 	}
 
-	throw std::runtime_error("Se alcanzo el final de los tokens inesperadamente.");
+	throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
 }
 
 
 #ifdef PYTHON_LIB
 
-	ErrorStruct parseTokens(const std::vector<Token>& tokens)
+	ErrorCode parseTokens(const std::vector<Token>& tokens)
 	{
 		try
 		{
 			Parser parser(tokens);
 			std::shared_ptr<NodeProgram> program = parser.parseProgram();
-			return {false, 0, "El programa no contiene errores!! :D"};
+			return ErrorCode{0, "El programa no contiene errores!! :D"};
 		}
-		catch (const std::runtime_error& e)
+		catch (const ErrorCode& e)
 		{
-			std::string message;
-			message += "Error: ";
-			message += e.what();
-			return {true, 99, message};
+			return e;
 		}
 	}
 

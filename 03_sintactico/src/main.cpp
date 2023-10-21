@@ -78,10 +78,10 @@
 
 		m.def("get_tokens", &getTokens, "Obtener Tokens a partir de una string");
 
-		py::class_<ErrorStruct>(m, "ErrorStruct")
-			.def_readonly("error", &ErrorStruct::error)
-			.def_readonly("line", &ErrorStruct::line)
-			.def_readonly("error_str", &ErrorStruct::errorStr);
+		py::class_<ErrorCode>(m, "ErrorCode")
+			.def_readonly("line", &ErrorCode::line)
+			.def_readonly("error_str", &ErrorCode::errorStr)
+			.def("what", &ErrorCode::what);
 
 		m.def("parse_tokens", &parseTokens, "Analizar sintacticamente una lista de tokens");
 	}
@@ -102,9 +102,9 @@
 			std::shared_ptr<NodeProgram> program = parser.parseProgram();
 			std::cout << "El programa no contiene errores!! :D\n";
 		}
-		catch (const std::runtime_error& e)
+		catch (const ErrorCode& e)
 		{
-			std::cerr << "Error: " << e.what() << std::endl;
+			std::cerr << e.what() << std::endl;
 		}
 
 		return 0;

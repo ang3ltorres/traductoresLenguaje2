@@ -8,9 +8,8 @@
 class ErrorCode : public std::exception
 {
 public:
-	ErrorCode(bool error, unsigned int line, std::string errorStr);
+	ErrorCode(unsigned int line, std::string errorStr);
 
-	bool error;
 	unsigned int line;
 	std::string errorStr;
 
@@ -268,6 +267,6 @@ public:
 
 #ifdef PYTHON_LIB
 
-	ErrorStruct parseTokens(const std::vector<Token>& tokens);
+	ErrorCode parseTokens(const std::vector<Token>& tokens);
 
 #endif
