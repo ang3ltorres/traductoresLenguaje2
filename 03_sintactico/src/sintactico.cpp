@@ -40,6 +40,7 @@ ErrorCode::ErrorCode(unsigned int line, std::string errorStr)
 const char* ErrorCode::what() const noexcept
 {
 	static std::string aux;
+	aux.clear();
 	aux += std::format("Error: {:s}\n\tLinea: {:d}\n", errorStr, line);
 	return aux.c_str();
 }

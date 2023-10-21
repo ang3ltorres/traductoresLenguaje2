@@ -64,6 +64,24 @@ class MainWindow(QMainWindow):
 			self.codeBox.clear()
 			self.codeBox.setPlainText(file.read())
 
+	def highlight_line(self, line: int, color: QColor):
+		cursor = QTextCursor(self.codeBox.document())
+		cursor.movePosition(QTextCursor.MoveOperation.Start)
+		for _ in range(line - 1):
+			cursor.movePosition(QTextCursor.MoveOperation.Down)
+
+		cursor.select(QTextCursor.SelectionType.LineUnderCursor)
+		format = QTextCharFormat()
+		format.setBackground(color)
+		cursor.mergeCharFormat(format)
+
+	def highlight_clear(self):
+		cursor = QTextCursor(self.codeBox.document())
+		format = QTextCharFormat()
+		format.clearBackground()
+		cursor.select(QTextCursor.SelectionType.Document)
+		cursor.setCharFormat(format)
+
 	def check(self):
 		
 		tokens = get_tokens(self.codeBox.toPlainText())
@@ -81,14 +99,15 @@ class MainWindow(QMainWindow):
 			self.tabla.setItem(row_pos, 2, QTableWidgetItem(str(tokens[i].token.value)))
 
 		# errorBox
-		error_code = parse_tokens(tokens)
-
 		self.errorsBox.clear()
+		self.highlight_clear()
+		error_code = parse_tokens(tokens)
 
 		if (error_code.line == 0):
 			self.errorsBox.setPlainText(error_code.error_str)
 		else:
 			self.errorsBox.setPlainText(error_code.what())
+			self.highlight_line(error_code.line, QColor("red"))
 
 def main():
 	app = QApplication(sys.argv)
