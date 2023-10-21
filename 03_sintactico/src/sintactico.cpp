@@ -39,7 +39,7 @@ ErrorCode::ErrorCode(unsigned int line, std::string errorStr)
 
 const char* ErrorCode::what() const noexcept
 {
-	std::string aux;
+	static std::string aux;
 	aux += std::format("Error: {:s}\n\tLinea: {:d}\n", errorStr, line);
 	return aux.c_str();
 }
@@ -123,12 +123,16 @@ NodeProgram::NodeProgram(std::vector<std::shared_ptr<NodeFunction>> functions)
 Parser::Parser(const std::vector<Token>& tokens)
 : tokens(tokens), index(0) {}
 
-bool Parser::notEnd() {return index < tokens.size();}
+void Parser::notEnd()
+{
+	if (!(index < tokens.size()))
+		throw ErrorCode(tokens.back().line, "Se alcanzo el final de los tokens inesperadamente");
+}
 
 std::shared_ptr<NodeProgram> Parser::parseProgram()
 {
 	std::vector<std::shared_ptr<NodeFunction>> functions;
-	while (notEnd())
+	while (index < tokens.size())
 		functions.push_back(parseFunction());
 
 	return std::make_shared<NodeProgram>(functions);
@@ -136,10 +140,8 @@ std::shared_ptr<NodeProgram> Parser::parseProgram()
 
 Token Parser::getNextToken()
 {
-	if (notEnd())
-		return tokens[index++];
-	else
-		throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
+	notEnd();
+	return tokens[index++];
 }
 
 std::shared_ptr<NodeIdentifier> Parser::parseIdentifier()
@@ -182,7 +184,8 @@ Node Parser::parseDataType()
 Node Parser::parseExpression()
 {
 	Node leftTerm = parseTerm();
-	if (notEnd() && (tokens[index].type == Token::Type::Addition || tokens[index].type == Token::Type::Subtraction))
+	notEnd();
+	if (tokens[index].type == Token::Type::Addition || tokens[index].type == Token::Type::Subtraction)
 	{
 		Token op = getNextToken();
 		Node rightTerm = parseExpression();
@@ -200,8 +203,9 @@ Node Parser::parseExpression()
 Node Parser::parseTerm()
 {
 	Node factor = parseFactor();
+	notEnd();
 
-	if (notEnd() && (tokens[index].type == Token::Type::Multiplication || tokens[index].type == Token::Type::Division))
+	if (tokens[index].type == Token::Type::Multiplication || tokens[index].type == Token::Type::Division)
 	{
 		Token op = getNextToken();
 		Node right = parseTerm();
@@ -218,31 +222,28 @@ Node Parser::parseTerm()
 
 Node Parser::parseFactor()
 {
-	if (notEnd())
-	{
-		Token token = tokens[index];
+	notEnd();
+	Token token = tokens[index];
 
-		if (token.type == Token::Type::Identifier)
-			return parseIdentifier();
-		else if ((token.type == Token::Type::Number) || (token.type == Token::Type::FloatingPointNumber))
-			return parseNumber();
-		else if (token.type == Token::Type::ParenthesisOpen)
+	if (token.type == Token::Type::Identifier)
+		return parseIdentifier();
+	else if ((token.type == Token::Type::Number) || (token.type == Token::Type::FloatingPointNumber))
+		return parseNumber();
+	else if (token.type == Token::Type::ParenthesisOpen)
+	{
+		index++; // Saltarnos el (
+		Node expression = parseExpression();
+		notEnd();
+		if (tokens[index].type == Token::Type::ParenthesisClose)
 		{
-			index++; // Saltarnos el (
-			Node expression = parseExpression();
-			if (notEnd() && tokens[index].type == Token::Type::ParenthesisClose)
-			{
-				index++; // Saltarnos el )
-				return expression;
-			}
-			else
-				throw ErrorCode(tokens[index].line, "Se esperaba un parentesis de cierre");
+			index++; // Saltarnos el )
+			return expression;
 		}
 		else
-			throw ErrorCode(tokens[index-1].line, "Se esperaba una expresion");
+			throw ErrorCode(tokens[index].line, "Se esperaba un parentesis de cierre");
 	}
-
-	throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
+	else
+		throw ErrorCode(tokens[index-1].line, "Se esperaba una expresion");
 }
 
 Node Parser::parseArgument()
@@ -257,35 +258,31 @@ Node Parser::parseParameters()
 {
 	std::vector< Node > args;
 
-	if (notEnd())
-	{
-		if (tokens[index].type == Token::Type::ParenthesisClose)
-			return std::make_shared<NodeParamaters>(tokens[index].line, args);
-		else if (!isDataType(tokens[index].type))
-			throw ErrorCode(tokens[index-1].line, "Se esperaba parentesis de cierre o una lista de argumentos");
-	}
+	notEnd();
+
+	if (tokens[index].type == Token::Type::ParenthesisClose)
+		return std::make_shared<NodeParamaters>(tokens[index].line, args);
+	else if (!isDataType(tokens[index].type))
+		throw ErrorCode(tokens[index-1].line, "Se esperaba parentesis de cierre o una lista de argumentos");
 
 	while (true)
 	{
 		Node arg = parseArgument();
 		args.push_back(arg);
 
-		if (notEnd())
+		notEnd();
+
+		if (tokens[index].type == Token::Type::ParenthesisClose)
 		{
-			if (tokens[index].type == Token::Type::ParenthesisClose)
-			{
-				return std::make_shared<NodeParamaters>(arg->lineNumber, args);
-			}
-			else if (tokens[index].type == Token::Type::Comma)
-			{
-				index++; // Saltarnos la ,
-				continue;
-			}
-			else
-				throw ErrorCode(arg->lineNumber, "Se esperaba un parentesis de cierre o una coma");
+			return std::make_shared<NodeParamaters>(arg->lineNumber, args);
+		}
+		else if (tokens[index].type == Token::Type::Comma)
+		{
+			index++; // Saltarnos la ,
+			continue;
 		}
 		else
-			throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
+			throw ErrorCode(arg->lineNumber, "Se esperaba un parentesis de cierre o una coma");
 	}
 }
 
@@ -304,43 +301,39 @@ Node Parser::parseParameters()
 
 Node Parser::parseReturnStatement()
 {
-	if (notEnd())
-	{
-		if (tokens[index].type == Token::Type::ReservedWordReturn)
-		{
-			index++; // Saltar el return
-			Node expression = parseExpression();
+	notEnd();
 
-			if (notEnd())
-			{
-				if (tokens[index].type == Token::Type::Semicolon)
-				{
-					index++; // Saltarnos el ;
-					return std::make_shared<NodeReturnStatement>(tokens[index].line, expression);
-				}
-				else
-					throw ErrorCode(expression->lineNumber, "Se esperaba un punto y coma");
-			}
-			else
-				throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
+	if (tokens[index].type == Token::Type::ReservedWordReturn)
+	{
+		index++; // Saltar el return
+		Node expression = parseExpression();
+
+		notEnd();
+		if (tokens[index].type == Token::Type::Semicolon)
+		{
+			index++; // Saltarnos el ;
+			return std::make_shared<NodeReturnStatement>(tokens[index].line, expression);
 		}
 		else
-			throw ErrorCode(tokens[index].line, "Se esperaba un return");
+			throw ErrorCode(expression->lineNumber, "Se esperaba un punto y coma");
 	}
 	else
-		throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
+		throw ErrorCode(tokens[index].line, "Se esperaba un return");
 }
 
 std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 {
 	std::shared_ptr<NodeIdentifier> identifier = parseIdentifier();
 
-	if (notEnd() && tokens[index].type == Token::Type::Assignment)
+	notEnd();
+
+	if (tokens[index].type == Token::Type::Assignment)
 	{
 		index++; // Saltarnos el =
 		Node expression = parseExpression();
+		notEnd();
 
-		if (notEnd() && tokens[index].type == Token::Type::Semicolon)
+		if (tokens[index].type == Token::Type::Semicolon)
 		{
 			index++; // Saltarnos el ;
 			return std::make_shared<NodeAssignment>(identifier, expression);
@@ -348,8 +341,8 @@ std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 		else
 			throw ErrorCode(expression->lineNumber, "Se esperaba un punto y coma");
 	}
-	
-	throw ErrorCode(identifier->lineNumber, "Se esperaba un operador de asignacion");
+	else
+		throw ErrorCode(identifier->lineNumber, "Se esperaba un operador de asignacion");
 }
 
 std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
@@ -383,26 +376,21 @@ Node Parser::parseCondition()
 {
 
 	Node left = parseExpression();
+	notEnd();
+	NodeBinaryExpression::Operation op = isRelationalOperator(tokens[index].type);
 
-	if (notEnd())
+	if (op != NodeBinaryExpression::Operation::Unknown)
 	{
-		NodeBinaryExpression::Operation op = isRelationalOperator(tokens[index].type);
+		index++; // Saltarnos el op
 
-		if (op != NodeBinaryExpression::Operation::Unknown)
-		{
-			index++; // Saltarnos el op
+		Node right = parseExpression();
 
-			Node right = parseExpression();
-
-			return std::make_shared<NodeCondition>(right->lineNumber,
-				std::make_shared<NodeBinaryExpression>(op, left, right)
-			);
-		}
-		else
-			return std::make_shared<NodeCondition>(left->lineNumber, left);
+		return std::make_shared<NodeCondition>(right->lineNumber,
+			std::make_shared<NodeBinaryExpression>(op, left, right)
+		);
 	}
 	else
-		throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
+		return std::make_shared<NodeCondition>(left->lineNumber, left);
 }
 
 Node Parser::parseIfStatement()
@@ -429,7 +417,7 @@ Node Parser::parseIfStatement()
 
 	t = getNextToken();
 	if (t.type != Token::Type::BraceOpen)
-		throw ErrorCode(lineNumber, "Se esperaba un corchetes abre");
+		throw ErrorCode(lineNumber, "Se esperaba un corchete abre");
 	
 	/******/
 	std::vector<Node> statements;
@@ -445,17 +433,12 @@ Node Parser::parseIfStatement()
 	{
 		Node statement = parseStatement();
 		statements.push_back(statement);
-
-		if (notEnd())
+		notEnd();
+		if (tokens[index].type == Token::Type::BraceClose)
 		{
-			if (tokens[index].type == Token::Type::BraceClose)
-			{
-				index++; // Saltarnos el }
-				return std::make_shared<NodeIfStatement>(statement->lineNumber, condition, statements);
-			}
+			index++; // Saltarnos el }
+			return std::make_shared<NodeIfStatement>(statement->lineNumber, condition, statements);
 		}
-		else
-			throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
 	}
 }
 
@@ -468,37 +451,34 @@ std::shared_ptr<NodeStatement> Parser::parseStatement()
 	// SOPORTE DE ELSE, ELSE IF
 	// isDataType esta 2 veces xd
 
-	if (notEnd())
+	notEnd();
+
+	// ReturnStatement
+	if (tokens[index].type == Token::Type::ReservedWordReturn)
 	{
-		// ReturnStatement
-		if (tokens[index].type == Token::Type::ReservedWordReturn)
-		{
-			Node node = parseReturnStatement();
-			return std::make_shared<NodeStatement>(node->lineNumber, node);
-		}
-		// IfStatement
-		else if (tokens[index].type == Token::Type::ReservedWordIf)
-		{
-			Node node = parseIfStatement();
-			return std::make_shared<NodeStatement>(node->lineNumber, node);
-		}
-		// Assignment
-		else if (tokens[index].type == Token::Type::Identifier)
-		{
-			Node node = parseAssignment();
-			return std::make_shared<NodeStatement>(node->lineNumber, node);
-		}
-		// Declaration
-		else if (isDataType(tokens[index].type))
-		{
-			Node node = parseDeclaration();
-			return std::make_shared<NodeStatement>(node->lineNumber, node);
-		}
-		else
-			throw ErrorCode(tokens[index].line, "Se esperaba un statement (Declaracion, Asignacion, If, Return)");
+		Node node = parseReturnStatement();
+		return std::make_shared<NodeStatement>(node->lineNumber, node);
+	}
+	// IfStatement
+	else if (tokens[index].type == Token::Type::ReservedWordIf)
+	{
+		Node node = parseIfStatement();
+		return std::make_shared<NodeStatement>(node->lineNumber, node);
+	}
+	// Assignment
+	else if (tokens[index].type == Token::Type::Identifier)
+	{
+		Node node = parseAssignment();
+		return std::make_shared<NodeStatement>(node->lineNumber, node);
+	}
+	// Declaration
+	else if (isDataType(tokens[index].type))
+	{
+		Node node = parseDeclaration();
+		return std::make_shared<NodeStatement>(node->lineNumber, node);
 	}
 	else
-		throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
+		throw ErrorCode(tokens[index].line, "Se esperaba un statement (Declaracion, Asignacion, If, Return)");
 }
 
 std::shared_ptr<NodeFunction> Parser::parseFunction()
@@ -521,13 +501,12 @@ std::shared_ptr<NodeFunction> Parser::parseFunction()
 	/******/
 	std::vector<Node> statements;
 
-	if (!(notEnd() && tokens[index].type == Token::Type::BraceOpen))
+	notEnd();
+	if (tokens[index].type != Token::Type::BraceOpen)
 		throw ErrorCode(t.line, "Se esperaba corchete abre");
 	index++; // Saltarnos el {
 
-	if (!notEnd())
-		throw ErrorCode(tokens.size(), "Se alcanzo el final de los tokens inesperadamente");
-
+	notEnd();
 	if (tokens[index].type == Token::Type::BraceClose)
 	{
 		index++; // Saltar el }
@@ -541,7 +520,8 @@ std::shared_ptr<NodeFunction> Parser::parseFunction()
 		Node statement = parseStatement();
 		statements.push_back(statement);
 
-		if (notEnd() && tokens[index].type == Token::Type::BraceClose)
+		notEnd();
+		if (tokens[index].type == Token::Type::BraceClose)
 		{
 			index++; // Saltar el }
 			return std::make_shared<NodeFunction>(statement->lineNumber, dataType, identifier, parameters, statements);

@@ -240,7 +240,7 @@ class Parser
 public:
 	Parser(const std::vector<Token>& tokens);
 	
-	bool notEnd();
+	void notEnd();
 
 	const std::vector<Token>& tokens;
 	size_t index;

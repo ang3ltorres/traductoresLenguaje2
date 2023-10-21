@@ -1,4 +1,4 @@
-int main () {
+int main () 
 	int num1 = (32 + 99) * 7 / 2;
 	char letra;
 	letra = 8 / (2+3);
