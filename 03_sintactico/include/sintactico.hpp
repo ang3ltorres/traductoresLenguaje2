@@ -43,14 +43,9 @@ struct NodeIdentifier: public ASTNode
 
 struct NodeNumber: public ASTNode
 {
-	NodeNumber(unsigned int line, int value);
-	int value;
-};
-
-struct NodeFloatingPointNumber: public ASTNode
-{
-	NodeFloatingPointNumber(unsigned int line, float value);
+	NodeNumber(unsigned int line, float value, bool decimal);
 	float value;
+	bool decimal;
 };
 
 struct NodeDataType: public ASTNode

@@ -106,7 +106,13 @@ static bool is_separator(char c)
 
 static int valid_number(const std::string& string)
 {
-	std::stringstream stream(string);
+	std::string stringCopy = string;
+
+	// Check last character 'f'
+	if (stringCopy.back() == 'f')
+		stringCopy.pop_back();
+
+	std::stringstream stream(stringCopy);
 	float number;
 	stream >> number;
 

@@ -3,7 +3,9 @@ int main () {
 	char letra;
 	letra = 8 / (2+3);
 
-	if (letra == 1 && num > 0)
+	float f = 3.5f;
+
+	if (letra == 1)
 	{
 		short num2 = letra + 2;
 	}

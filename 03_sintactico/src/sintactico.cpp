@@ -37,11 +37,8 @@ static NodeBinaryExpression::Operation isRelationalOperator(Token::Type type)
 NodeIdentifier::NodeIdentifier(unsigned int line, const std::string& name)
 : ASTNode{ASTNode::Type::Identifier, line}, name(name) {}
 
-NodeNumber::NodeNumber(unsigned int line, int value)
-: ASTNode{ASTNode::Type::Number, line}, value(value) {}
-
-NodeFloatingPointNumber::NodeFloatingPointNumber(unsigned int line, float value)
-: ASTNode{ASTNode::Type::FloatingPointNumber, line}, value(value) {}
+NodeNumber::NodeNumber(unsigned int line, float value, bool decimal)
+: ASTNode{ASTNode::Type::Number, line}, value(value), decimal(decimal) {}
 
 NodeDataType::NodeDataType(unsigned int line, NodeDataType::Type dataType)
 : ASTNode{ASTNode::Type::DataType, line}, dataType(dataType) {}
@@ -148,7 +145,9 @@ std::shared_ptr<NodeNumber> Parser::parseNumber()
 {
 	Token t = getNextToken();
 	if (t.type == Token::Type::Number)
-		return std::make_shared<NodeNumber>(t.line, std::stoi(t.lexema));
+		return std::make_shared<NodeNumber>(t.line, std::stof(t.lexema), false);
+	else if (t.type == Token::Type::FloatingPointNumber)
+		return std::make_shared<NodeNumber>(t.line, std::stof(t.lexema), true);
 	else
 		throw std::runtime_error("Se esperaba un numero.");
 }
@@ -215,7 +214,7 @@ Node Parser::parseFactor()
 
 		if (token.type == Token::Type::Identifier)
 			return parseIdentifier();
-		else if (token.type == Token::Type::Number)
+		else if ((token.type == Token::Type::Number) || (token.type == Token::Type::FloatingPointNumber))
 			return parseNumber();
 		else if (token.type == Token::Type::ParenthesisOpen)
 		{
