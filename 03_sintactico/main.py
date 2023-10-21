@@ -17,6 +17,13 @@ class MainWindow(QMainWindow):
 		self.w = QWidget(self)
 		self.setCentralWidget(self.w)
 
+		# Menu file
+		open_action_file = QAction('Abrir archivo de código', self)
+		open_action_file.triggered.connect(self.open_file)
+
+		file_menu = self.menuBar().addMenu('Archivo')
+		file_menu.addAction(open_action_file)
+
 		layout = QVBoxLayout(self.w)
 
 		self.fontConsolas = QFont()
@@ -50,6 +57,12 @@ class MainWindow(QMainWindow):
 		layout.addWidget(self.tabla)
 		layout.addWidget(self.errorsBox)
 
+	def open_file(self):
+		file_name, _ = QFileDialog.getOpenFileName(self, 'Abrir archivo', '', 'Archivos de código C (*.c)')
+		if file_name:
+			file = open(file_name, 'r', encoding='utf-8')
+			self.codeBox.clear()
+			self.codeBox.setPlainText(file.read())
 
 	def check(self):
 		
