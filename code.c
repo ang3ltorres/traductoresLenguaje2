@@ -1,4 +1,4 @@
-int main () 
+int main () {
 	int num1 = (32 + 99) * 7 / 2;
 	char letra;
 	letra = 8 / (2+3);
@@ -7,7 +7,7 @@ int main ()
 
 	if (letra == 1)
 	{
-		short num2 = letra + 2;
+
 	}
 	
 	letra = 33 + num1 * 2;

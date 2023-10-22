@@ -57,7 +57,7 @@ NodeDataType::NodeDataType(unsigned int line, NodeDataType::Type dataType)
 NodeArgument::NodeArgument(unsigned int line, Node dataType, Node identifier)
 : ASTNode{ASTNode::Type::Argument, line}, dataType(dataType), identifier(identifier) {}
 
-NodeParamaters::NodeParamaters(unsigned int line, std::vector< Node > args)
+NodeParamaters::NodeParamaters(unsigned int line, std::vector<Node> args)
 : ASTNode{ASTNode::Type::Parameters, line}, args(args) {}
 
 NodeExpression::NodeExpression(Node term)
@@ -104,7 +104,7 @@ NodeAssignment::NodeAssignment(Node var, Node exp)
 NodeDeclaration::NodeDeclaration(unsigned int line, Node dataType, Node node)
 : ASTNode{ASTNode::Type::Declaration, line}, dataType(dataType), node(node) {}
 
-NodeIfStatement::NodeIfStatement(unsigned int line, Node condition, std::vector< Node > statements)
+NodeIfStatement::NodeIfStatement(unsigned int line, Node condition, std::vector<Node> statements)
 : ASTNode{ASTNode::Type::IfStatement, line}, condition(condition), statements(statements) {}
 
 NodeStatement::NodeStatement(unsigned int line, Node statement)
@@ -114,7 +114,7 @@ NodeFunction::NodeFunction(unsigned int line,
 	Node datatype,
 	Node identifier,
 	Node parameters,
-	std::vector< Node > statements
+	std::vector<Node> statements
 )
 : ASTNode{ASTNode::Type::Function, line}, datatype(datatype), identifier(identifier), parameters(parameters), statements(statements) {}
 
@@ -257,7 +257,7 @@ Node Parser::parseArgument()
 
 Node Parser::parseParameters()
 {
-	std::vector< Node > args;
+	std::vector<Node> args;
 
 	notEnd();
 
@@ -425,10 +425,7 @@ Node Parser::parseIfStatement()
 
 	t = getNextToken();
 	if (t.type == Token::Type::BraceClose)
-	{
-		index++; // Saltarnos el }
 		return std::make_shared<NodeIfStatement>(t.line, condition, statements);
-	}
 
 	while (true)
 	{

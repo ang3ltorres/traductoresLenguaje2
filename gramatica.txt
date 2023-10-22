@@ -1,7 +1,7 @@
 <program>                   -> <function> | <function> <program>
 <function>                  -> <dataType> <identifier> ( <parameters> ) { <statement>* }
 <statement>                 -> <declaration> | <assignment> | <ifStatement> | <returnStatement>
-<ifStatement>               -> if ( <condition> ) { <statement>* } else { <statement>* } | if ( <logicalExpression> ) { <statement>* }
+<ifStatement>               -> if ( <condition> ) { <statement>* } | if ( <condition> ) { <statement>* } else { <statement>* }
 <returnStatement>           -> return <expression> ;
 <parameters>                -> ε | <argument> | <argument> , <parameters>
 <argument>                  -> <dataType> <identifier>

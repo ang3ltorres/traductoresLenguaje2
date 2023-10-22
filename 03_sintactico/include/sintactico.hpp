@@ -86,9 +86,9 @@ struct NodeArgument: public ASTNode
 
 struct NodeParamaters: public ASTNode
 {
-	NodeParamaters(unsigned int line, std::vector< Node > args);
+	NodeParamaters(unsigned int line, std::vector<Node> args);
 
-	std::vector< Node > args;
+	std::vector<Node> args;
 };
 
 struct NodeExpression: public ASTNode
@@ -200,10 +200,11 @@ struct NodeRelationalExpression : public ASTNode
 
 struct NodeIfStatement : public ASTNode
 {
-	NodeIfStatement(unsigned int line, Node condition, std::vector< Node > statements);
+	NodeIfStatement(unsigned int line, Node condition, std::vector<Node> statements);
 
 	Node condition;
-	std::vector< Node > statements;
+	std::vector<Node> statements;
+	std::vector<Node> elseStatements;
 };
 
 struct NodeStatement : public ASTNode
@@ -220,13 +221,13 @@ struct NodeFunction : public ASTNode
 		Node datatype,
 		Node identifier,
 		Node parameters,
-		std::vector< Node > statements
+		std::vector<Node> statements
 	);
 
 	Node datatype;
 	Node identifier;
 	Node parameters;
-	std::vector< Node > statements;
+	std::vector<Node> statements;
 };
 
 struct NodeProgram : public ASTNode
