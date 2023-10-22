@@ -104,8 +104,8 @@ NodeAssignment::NodeAssignment(Node var, Node exp)
 NodeDeclaration::NodeDeclaration(unsigned int line, Node dataType, Node node)
 : ASTNode{ASTNode::Type::Declaration, line}, dataType(dataType), node(node) {}
 
-NodeIfStatement::NodeIfStatement(unsigned int line, Node condition, std::vector<Node> statements)
-: ASTNode{ASTNode::Type::IfStatement, line}, condition(condition), statements(statements) {}
+NodeIfStatement::NodeIfStatement(unsigned int line, Node condition, std::vector<Node> statements, std::vector<Node> elseStatements)
+: ASTNode{ASTNode::Type::IfStatement, line}, condition(condition), statements(statements), elseStatements(elseStatements) {}
 
 NodeStatement::NodeStatement(unsigned int line, Node statement)
 : ASTNode{ASTNode::Type::Statement, line}, statement(statement) {}
@@ -397,10 +397,12 @@ Node Parser::parseCondition()
 Node Parser::parseIfStatement()
 {
 	unsigned int lineNumber;
+	unsigned int ifLineNumber;
 	Token t;
 
 	t = getNextToken();
 	lineNumber = t.line;
+	ifLineNumber = t.line;
 	if (t.type != Token::Type::ReservedWordIf)
 		throw ErrorCode(lineNumber, "Se esperaba un if");
 
@@ -420,24 +422,50 @@ Node Parser::parseIfStatement()
 	if (t.type != Token::Type::BraceOpen)
 		throw ErrorCode(lineNumber, "Se esperaba un corchete abre");
 	
-	/******/
+	/*** Get statements ***/
 	std::vector<Node> statements;
 
 	t = getNextToken();
-	if (t.type == Token::Type::BraceClose)
-		return std::make_shared<NodeIfStatement>(t.line, condition, statements);
-
-	while (true)
+	if (t.type != Token::Type::BraceClose)
 	{
-		Node statement = parseStatement();
-		statements.push_back(statement);
-		notEnd();
-		if (tokens[index].type == Token::Type::BraceClose)
+		while (true)
 		{
-			index++; // Saltarnos el }
-			return std::make_shared<NodeIfStatement>(statement->lineNumber, condition, statements);
+			Node statement = parseStatement();
+			statements.push_back(statement);
+			notEnd();
+			if (tokens[index].type == Token::Type::BraceClose)
+			{
+				index++; // Saltarnos el }
+				break;
+			}
 		}
 	}
+
+	/*** Get else statements ***/
+	std::vector<Node> elseStatements;
+
+	t = getNextToken();
+	if (t.type == Token::Type::ReservedWordElse)
+	{
+		t = getNextToken();
+		if (t.type != Token::Type::BraceOpen)
+			throw ErrorCode(lineNumber, "Se esperaba un corchete abre");
+
+		t = getNextToken();
+		if (t.type != Token::Type::BraceClose)
+		{
+			while (true)
+			{
+				Node statement = parseStatement();
+				elseStatements.push_back(statement);
+				t = getNextToken();
+				if (t.type == Token::Type::BraceClose)
+					break;
+			}
+		}
+	}
+
+	return std::make_shared<NodeIfStatement>(ifLineNumber, condition, statements, elseStatements);
 }
 
 std::shared_ptr<NodeStatement> Parser::parseStatement()

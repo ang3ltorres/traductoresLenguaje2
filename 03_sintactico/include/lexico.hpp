@@ -19,6 +19,7 @@ public:
 		ReservedWordBreak,
 		ReservedWordSwitch,
 		ReservedWordIf,
+		ReservedWordElse,
 
 		DataTypeVoid,
 		DataTypeChar,

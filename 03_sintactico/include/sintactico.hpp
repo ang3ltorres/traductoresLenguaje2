@@ -200,7 +200,7 @@ struct NodeRelationalExpression : public ASTNode
 
 struct NodeIfStatement : public ASTNode
 {
-	NodeIfStatement(unsigned int line, Node condition, std::vector<Node> statements);
+	NodeIfStatement(unsigned int line, Node condition, std::vector<Node> statements, std::vector<Node> elseStatements);
 
 	Node condition;
 	std::vector<Node> statements;

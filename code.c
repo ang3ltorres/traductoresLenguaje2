@@ -7,7 +7,13 @@ int main () {
 
 	if (letra == 1)
 	{
-
+		char var22 = 43;
+		int b = 3;
+	}
+	else
+	{
+		char var22 = 43;
+		int b = 3;
 	}
 	
 	letra = 33 + num1 * 2;

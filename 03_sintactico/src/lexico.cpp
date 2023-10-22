@@ -19,6 +19,7 @@ const std::vector<std::pair<std::string, std::string>> tokenTypes =
 	{"break", "Palabra reservada break"},
 	{"switch", "Palabra reservada switch"},
 	{"if", "Palabra reservada if"},
+	{"else", "Palabra reservada else"},
 
 	{"void", "Tipo de dato void"},
 	{"char", "Tipo de dato char"},
