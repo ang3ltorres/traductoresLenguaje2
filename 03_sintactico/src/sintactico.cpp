@@ -396,37 +396,33 @@ Node Parser::parseCondition()
 
 Node Parser::parseIfStatement()
 {
-	unsigned int lineNumber;
 	unsigned int ifLineNumber;
 	Token t;
 
 	t = getNextToken();
-	lineNumber = t.line;
 	ifLineNumber = t.line;
 	if (t.type != Token::Type::ReservedWordIf)
-		throw ErrorCode(lineNumber, "Se esperaba un if");
+		throw ErrorCode(tokens[index-2].line, "Se esperaba un if");
 
 	t = getNextToken();
-	lineNumber = t.line;
 	if (t.type != Token::Type::ParenthesisOpen)
-		throw ErrorCode(lineNumber, "Se esperaba un parentesis abre");
+		throw ErrorCode(tokens[index-2].line, "Se esperaba un parentesis abre");
 
 	Node condition = parseCondition();
 
 	t = getNextToken();
-	lineNumber = t.line;
 	if (t.type != Token::Type::ParenthesisClose)
-		throw ErrorCode(lineNumber, "Se esperaba un parentesis de cierre");
+		throw ErrorCode(tokens[index-2].line, "Se esperaba un parentesis de cierre");
 
 	t = getNextToken();
 	if (t.type != Token::Type::BraceOpen)
-		throw ErrorCode(lineNumber, "Se esperaba un corchete abre");
+		throw ErrorCode(tokens[index-2].line, "Se esperaba un corchete abre");
 	
 	/*** Get statements ***/
 	std::vector<Node> statements;
 
-	t = getNextToken();
-	if (t.type != Token::Type::BraceClose)
+	notEnd();
+	if (tokens[index].type != Token::Type::BraceClose)
 	{
 		while (true)
 		{
@@ -434,35 +430,36 @@ Node Parser::parseIfStatement()
 			statements.push_back(statement);
 			notEnd();
 			if (tokens[index].type == Token::Type::BraceClose)
-			{
-				index++; // Saltarnos el }
 				break;
-			}
 		}
 	}
+	index++; // Saltarnos el }
 
 	/*** Get else statements ***/
 	std::vector<Node> elseStatements;
 
-	t = getNextToken();
-	if (t.type == Token::Type::ReservedWordElse)
+	notEnd();
+	if (tokens[index].type == Token::Type::ReservedWordElse)
 	{
-		t = getNextToken();
-		if (t.type != Token::Type::BraceOpen)
-			throw ErrorCode(lineNumber, "Se esperaba un corchete abre");
+		index++; // Saltarnos el else
 
 		t = getNextToken();
-		if (t.type != Token::Type::BraceClose)
+		if (t.type != Token::Type::BraceOpen)
+			throw ErrorCode(tokens[index-1].line, "Se esperaba un corchete abre");
+
+		notEnd();
+		if (tokens[index].type != Token::Type::BraceClose)
 		{
 			while (true)
 			{
 				Node statement = parseStatement();
 				elseStatements.push_back(statement);
-				t = getNextToken();
-				if (t.type == Token::Type::BraceClose)
+				notEnd();
+				if (tokens[index].type == Token::Type::BraceClose)
 					break;
 			}
 		}
+		index++; // Saltarnos el }	
 	}
 
 	return std::make_shared<NodeIfStatement>(ifLineNumber, condition, statements, elseStatements);

@@ -7,15 +7,26 @@ int main () {
 
 	if (letra == 1)
 	{
-		char var22 = 43;
-		int b = 3;
+		float f = 3.5f;
+
+
+		if (letra == 1)
+		{
+
+		}
+		else
+		{
+			k = 4343;
+		}
+
+		s = 2;
 	}
 	else
 	{
-		char var22 = 43;
-		int b = 3;
+		float f = 3.5f;
+		s = 2;
 	}
-	
+
 	letra = 33 + num1 * 2;
 
 	return 0;
