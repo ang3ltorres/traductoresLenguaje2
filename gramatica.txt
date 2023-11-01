@@ -12,7 +12,7 @@
 <term>                      -> <factor> | <factor> * <term> | <factor> / <term>
 <factor>                    -> <identifier> | <number> | ( <expression> )
 <relationalOperator>        -> < | > | <= | >= | == | !=
-<dataType>                  -> int | float | char | void | double | bool
+<dataType>                  -> int | float | char | short | void | double | bool
 <identifier>                -> [a-zA-Z][a-zA-Z0-9_]*
 <floatingPointNumber>       -> [0-9]+.[0-9]+
 <number>                    -> [0-9]+
