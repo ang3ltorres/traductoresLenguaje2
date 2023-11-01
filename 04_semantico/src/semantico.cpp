@@ -5,6 +5,21 @@
 
 static std::vector<std::unordered_map<std::string, SymbolInfo>> symbolTable;
 
+static void parseAssignment(const std::shared_ptr<NodeAssignment>& node)
+{
+	auto id = std::static_pointer_cast<NodeIdentifier>(node->var)->name;
+
+	// Check symbol table
+	auto find = symbolTable.back().find(id);
+
+	if (find != symbolTable.back().end())
+	{
+		// No c
+	}
+	else
+		throw ErrorCode(node->lineNumber, std::format("La variable \"{}\" no esta declarada previamente", id));
+}
+
 static void parseDeclaration(const std::shared_ptr<NodeDeclaration>& node)
 {
 	auto type = std::static_pointer_cast<NodeDataType>(node->dataType)->dataType;
@@ -22,7 +37,9 @@ static void parseDeclaration(const std::shared_ptr<NodeDeclaration>& node)
 
 
 	// Check symbol table
-	if (symbolTable.back().find(id) == symbolTable.back().end())
+	auto find = symbolTable.back().find(id);
+
+	if (find == symbolTable.back().end())
 	{
 		symbolTable.back()[id] = SymbolInfo
 		{
@@ -33,16 +50,16 @@ static void parseDeclaration(const std::shared_ptr<NodeDeclaration>& node)
 		};
 	}
 	else
-		throw ErrorCode(node->lineNumber, std::format("Redefinicion de la variable \"{}\"", id));
+		throw ErrorCode(node->lineNumber, std::format("Redefinicion de la variable (Linea: {}) \"{}\"", find->second.line, id));
 }
 
 void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 {
 	// Tablas de simbolos, el index representa el scopeLevel - 1
-	symbolTable.push_back(std::unordered_map<std::string, SymbolInfo>());
 
 	for (const std::shared_ptr<NodeFunction>& function : program->functions)
 	{
+		symbolTable.push_back(std::unordered_map<std::string, SymbolInfo>());
 
 		// Function type
 		DataType functionType = std::static_pointer_cast<NodeDataType>(function->datatype)->dataType;
@@ -70,8 +87,6 @@ void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 		}
 
 		// Statements
-		symbolTable.push_back(std::unordered_map<std::string, SymbolInfo>());
-
 		for (const auto& i : function->statements)
 		{
 			// Un-wrap statement
@@ -81,6 +96,11 @@ void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 			{
 				auto declaration = std::static_pointer_cast<NodeDeclaration>(statement->statement);
 				parseDeclaration(declaration);
+			}
+			else if (statement->statement->type == ASTNode::Type::Assignament)
+			{
+				auto assignment = std::static_pointer_cast<NodeAssignment>(statement->statement);
+				parseAssignment(assignment);
 			}
 		}
 
