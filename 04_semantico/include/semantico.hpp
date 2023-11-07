@@ -6,6 +6,18 @@
 #include "sintactico.hpp"
 #include "generic.hpp"
 
+struct Value
+{
+	bool valid;
+	bool isFloat;
+	float value;
+
+	Value operator+(const Value& other);
+	Value operator-(const Value& other);
+	Value operator*(const Value& other);
+	Value operator/(const Value& other);
+};
+
 struct SymbolInfo
 {
 	enum class SymbolType : int
@@ -21,6 +33,7 @@ struct SymbolInfo
 	unsigned int line;
 	DataType type;
 	SymbolType symbolType;
+	Value value;
 };
 
 void semanticAnalysis(const std::shared_ptr<NodeProgram>& program);
