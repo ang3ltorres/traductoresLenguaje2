@@ -119,11 +119,19 @@ struct NodeBinaryExpression : public ASTNode
 		NotEqualTo,
 	};
 
-	NodeBinaryExpression(Operation operation, Node left, Node right);
+	enum class Type : int
+	{
+		Expression = 0,
+		Term
+	};
 
+	NodeBinaryExpression(Operation operation, NodeBinaryExpression::Type type, Node left, Node right);
+
+	// WTF TODO
 	static NodeBinaryExpression::Operation toOperation(Token token);
-
+	
 	Operation operation;
+	Type type;
 	Node left;
 	Node right;
 };

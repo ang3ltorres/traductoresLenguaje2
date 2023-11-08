@@ -72,8 +72,8 @@ NodeTerm::NodeTerm(Node factor)
 NodeReturnStatement::NodeReturnStatement(unsigned int line, Node expression)
 : ASTNode{ASTNode::Type::ReturnStatement, line}, expression(expression) {}
 
-NodeBinaryExpression::NodeBinaryExpression(Operation operation, Node left, Node right)
-: ASTNode{ASTNode::Type::BinaryExpression, left->lineNumber}, operation(operation), left(left), right(right) {}
+NodeBinaryExpression::NodeBinaryExpression(Operation operation, NodeBinaryExpression::Type type, Node left, Node right)
+: ASTNode{ASTNode::Type::BinaryExpression, left->lineNumber}, operation(operation), type(type), left(left), right(right) {}
 
 NodeBinaryExpression::Operation NodeBinaryExpression::toOperation(Token token)
 {
@@ -192,6 +192,7 @@ Node Parser::parseExpression()
 		Node rightTerm = parseExpression();
 		return std::make_shared<NodeBinaryExpression>
 		(
+			NodeBinaryExpression::Type::Expression,
 			(op.type == Token::Type::Addition) ? NodeBinaryExpression::Operation::Addition : NodeBinaryExpression::Operation::Subtraction,
 			leftTerm,
 			rightTerm
@@ -212,6 +213,7 @@ Node Parser::parseTerm()
 		Node right = parseTerm();
 		return std::make_shared<NodeBinaryExpression>
 		(
+			NodeBinaryExpression::Type::Term,
 			(op.type == Token::Type::Multiplication) ? NodeBinaryExpression::Operation::Multiplication : NodeBinaryExpression::Operation::Division,
 			factor,
 			right
@@ -387,7 +389,7 @@ Node Parser::parseCondition()
 		Node right = parseExpression();
 
 		return std::make_shared<NodeCondition>(right->lineNumber,
-			std::make_shared<NodeBinaryExpression>(op, left, right)
+			std::make_shared<NodeBinaryExpression>(op, NodeBinaryExpression::Type::Expression, left, right)
 		);
 	}
 	else
