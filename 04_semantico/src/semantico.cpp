@@ -78,7 +78,7 @@ static Value parseFactor(const Node& node)
 			};
 		}
 
-		case ASTNode::Type::Expression:
+		case ASTNode::Type::Expression: case ASTNode::Type::BinaryExpression:
 		{
 			auto expression = std::static_pointer_cast<NodeExpression>(node);
 			return parseExpression(expression);
@@ -96,14 +96,32 @@ static Value parseTerm(const Node& node)
 	{
 		auto binaryExpression = std::static_pointer_cast<NodeBinaryExpression>(node);
 		
-		auto factor = std::static_pointer_cast<NodeFactor>(binaryExpression->left);
-		auto term = std::static_pointer_cast<NodeTerm>(binaryExpression->right);
+		// Term tambien puede ser una Expression
+		bool isExpression = binaryExpression->type == NodeBinaryExpression::Type::Expression;
 
-		switch (binaryExpression->operation)
+		if (isExpression)
 		{
-			case NodeBinaryExpression::Operation::Multiplication: return (parseFactor(factor) * parseTerm(term));
-			case NodeBinaryExpression::Operation::Division: return (parseFactor(factor) / parseTerm(term));
-			default: throw ErrorCode(node->lineNumber, "Nodo invalido");
+			auto term = std::static_pointer_cast<NodeTerm>(binaryExpression->left);
+			auto expression = std::static_pointer_cast<NodeExpression>(binaryExpression->right);
+
+			switch (binaryExpression->operation)
+			{
+				case NodeBinaryExpression::Operation::Addition: return (parseTerm(term) + parseExpression(expression));
+				case NodeBinaryExpression::Operation::Subtraction: return (parseTerm(term) - parseExpression(expression));
+				default: throw ErrorCode(node->lineNumber, "Nodo invalido");
+			}
+		}
+		else
+		{
+			auto factor = std::static_pointer_cast<NodeFactor>(binaryExpression->left);
+			auto term = std::static_pointer_cast<NodeTerm>(binaryExpression->right);
+
+			switch (binaryExpression->operation)
+			{
+				case NodeBinaryExpression::Operation::Multiplication: return (parseFactor(factor) * parseTerm(term));
+				case NodeBinaryExpression::Operation::Division: return (parseFactor(factor) / parseTerm(term));
+				default: throw ErrorCode(node->lineNumber, "Nodo invalido");
+			}
 		}
 	}
 	else
@@ -120,15 +138,26 @@ static Value parseExpression(const Node& node)
 	if (isBinaryExpression)
 	{
 		auto binaryExpression = std::static_pointer_cast<NodeBinaryExpression>(node);
-		
-		auto term = std::static_pointer_cast<NodeTerm>(binaryExpression->left);
-		auto expression = std::static_pointer_cast<NodeExpression>(binaryExpression->right);
 
-		switch (binaryExpression->operation)
+		// Es un Term o una Expression??
+		bool isExpression = binaryExpression->type == NodeBinaryExpression::Type::Expression;
+
+		if (isExpression)
 		{
-			case NodeBinaryExpression::Operation::Addition: return (parseTerm(term) + parseExpression(expression));
-			case NodeBinaryExpression::Operation::Subtraction: return (parseTerm(term) - parseExpression(expression));
-			default: throw ErrorCode(node->lineNumber, "Nodo invalido");
+			auto term = std::static_pointer_cast<NodeTerm>(binaryExpression->left);
+			auto expression = std::static_pointer_cast<NodeExpression>(binaryExpression->right);
+
+			switch (binaryExpression->operation)
+			{
+				case NodeBinaryExpression::Operation::Addition: return (parseTerm(term) + parseExpression(expression));
+				case NodeBinaryExpression::Operation::Subtraction: return (parseTerm(term) - parseExpression(expression));
+				default: throw ErrorCode(node->lineNumber, "Nodo invalido");
+			}
+		}
+		else
+		{
+			auto term = std::static_pointer_cast<NodeTerm>(node);
+			return parseTerm(term);
 		}
 	}
 	else

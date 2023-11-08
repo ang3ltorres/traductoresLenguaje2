@@ -192,8 +192,8 @@ Node Parser::parseExpression()
 		Node rightTerm = parseExpression();
 		return std::make_shared<NodeBinaryExpression>
 		(
-			NodeBinaryExpression::Type::Expression,
 			(op.type == Token::Type::Addition) ? NodeBinaryExpression::Operation::Addition : NodeBinaryExpression::Operation::Subtraction,
+			NodeBinaryExpression::Type::Expression,
 			leftTerm,
 			rightTerm
 		);
@@ -213,8 +213,8 @@ Node Parser::parseTerm()
 		Node right = parseTerm();
 		return std::make_shared<NodeBinaryExpression>
 		(
-			NodeBinaryExpression::Type::Term,
 			(op.type == Token::Type::Multiplication) ? NodeBinaryExpression::Operation::Multiplication : NodeBinaryExpression::Operation::Division,
+			NodeBinaryExpression::Type::Term,
 			factor,
 			right
 		);
