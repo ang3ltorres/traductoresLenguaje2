@@ -2,6 +2,7 @@
 #include <memory>
 #include <iostream>
 #include <format>
+#include <cmath>
 
 Value Value::operator+(const Value& other)
 {
@@ -9,7 +10,7 @@ Value Value::operator+(const Value& other)
 	{
 		true,
 		other.isFloat || this->isFloat,
-		other.value + this->value
+		this->value + other.value
 	};
 }
 
@@ -19,7 +20,7 @@ Value Value::operator-(const Value& other)
 	{
 		true,
 		other.isFloat || this->isFloat,
-		other.value - this->value
+		this->value - other.value
 	};
 }
 
@@ -29,7 +30,7 @@ Value Value::operator*(const Value& other)
 	{
 		true,
 		other.isFloat || this->isFloat,
-		other.value * this->value
+		this->value * other.value
 	};
 }
 
@@ -39,7 +40,7 @@ Value Value::operator/(const Value& other)
 	{
 		true,
 		other.isFloat || this->isFloat,
-		other.value / this->value
+		this->value / other.value
 	};
 }
 
@@ -79,10 +80,7 @@ static Value parseFactor(const Node& node)
 		}
 
 		case ASTNode::Type::Expression: case ASTNode::Type::BinaryExpression:
-		{
-			auto expression = std::static_pointer_cast<NodeExpression>(node);
-			return parseExpression(expression);
-		}
+			return parseExpression(node);
 
 		default: throw ErrorCode(node->lineNumber, "Nodo invalido");
 	}
@@ -119,7 +117,16 @@ static Value parseTerm(const Node& node)
 			switch (binaryExpression->operation)
 			{
 				case NodeBinaryExpression::Operation::Multiplication: return (parseFactor(factor) * parseTerm(term));
-				case NodeBinaryExpression::Operation::Division: return (parseFactor(factor) / parseTerm(term));
+
+				case NodeBinaryExpression::Operation::Division:
+				{
+					auto parsedTerm = parseTerm(term);
+					if (parsedTerm.value == 0.0f)
+						throw ErrorCode(term->lineNumber, "Division por cero");
+
+					return (parseFactor(factor) / parsedTerm);
+				}
+
 				default: throw ErrorCode(node->lineNumber, "Nodo invalido");
 			}
 		}
@@ -205,7 +212,7 @@ static void parseDeclaration(const std::shared_ptr<NodeDeclaration>& node)
 		auto expression = std::static_pointer_cast<NodeExpression>(assignment->exp);
 
 		Value value = parseExpression(expression);
-		std::cout << value.value;
+		std::cout << value.value << '\n';
 
 		symbolTable.back()[id] = SymbolInfo
 		{

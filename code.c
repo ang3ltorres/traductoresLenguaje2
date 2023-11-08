@@ -1,6 +1,9 @@
 int suma(int a, int b)
 {
-	int num = (10 + 3) * (5 + 5);
+	int num = 50/1;
+
+	float n = 0.0f;
+	float n2 = 0;
 
 
 	return 0;
