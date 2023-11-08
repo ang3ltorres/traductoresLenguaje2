@@ -113,13 +113,19 @@ static int valid_number(const std::string& string)
 	if (stringCopy.back() == 'f')
 		stringCopy.pop_back();
 
+	// Checar punto
+	if (stringCopy.back() == '.')
+		return 0;
+
+	bool floatingPoint = (stringCopy.find('.') != std::string::npos);
+
 	std::stringstream stream(stringCopy);
 	float number;
 	stream >> number;
 
 	if (stream.eof() && !stream.fail())
 	{
-		if (std::floor(number) == number)
+		if (std::floor(number) == number && !floatingPoint)
 			return 1;
 		else
 			return 2;

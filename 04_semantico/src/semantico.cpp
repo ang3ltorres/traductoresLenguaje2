@@ -187,6 +187,10 @@ static void parseAssignment(const std::shared_ptr<NodeAssignment>& node)
 	// Evaluate expression, Change value
 	auto newExpression = parseExpression(std::static_pointer_cast<NodeExpression>(node->exp));
 
+	// float-float / int-int Validation
+	if (!(find->second.type == DataType::Float && newExpression.isFloat) && !(find->second.type == DataType::Int && !newExpression.isFloat))
+		throw ErrorCode(find->second.line, "Tipo de dato incorrecto");
+
 	find->second.value = newExpression;
 	std::cout << newExpression.value << '\n';
 }
@@ -215,6 +219,11 @@ static void parseDeclaration(const std::shared_ptr<NodeDeclaration>& node)
 		auto expression = std::static_pointer_cast<NodeExpression>(assignment->exp);
 
 		Value value = parseExpression(expression);
+
+		// float-float / int-int Validation
+		if (!(type == DataType::Float && value.isFloat) && !(type == DataType::Int && !value.isFloat))
+			throw ErrorCode(expression->lineNumber, "Tipo de dato incorrecto");
+
 		std::cout << value.value << '\n';
 
 		symbolTable.back()[id] = SymbolInfo

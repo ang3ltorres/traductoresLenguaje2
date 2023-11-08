@@ -1,8 +1,9 @@
 int suma(int a, int b)
 {
-	int num = 50/1;
+	float f = 32.0;
+	int num = 5 + 2;
 
-	num = num + 2;
+	f = 2.0;
 
 
 	return 0;
