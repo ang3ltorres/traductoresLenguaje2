@@ -2,6 +2,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <utility>
 
 #include "lexico.hpp"
 #include "generic.hpp"
@@ -252,9 +253,3 @@ public:
 	std::shared_ptr<NodeStatement> parseStatement();
 	std::shared_ptr<NodeFunction> parseFunction();
 };
-
-#ifdef PYTHON_LIB
-
-	ErrorCode parseTokens(const std::vector<Token>& tokens);
-
-#endif

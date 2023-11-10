@@ -2,7 +2,7 @@ import os
 import sys
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
-from sintactico import get_tokens, parse_tokens, ErrorCode
+from semantico import parse, ErrorCode
 
 class MainWindow(QMainWindow):
 	def __init__(self):
@@ -46,16 +46,23 @@ class MainWindow(QMainWindow):
 		for column in range(3):
 			self.tabla.horizontalHeader().setSectionResizeMode(column, QHeaderView.ResizeMode.Stretch)
 
-		self.errorsBox = QPlainTextEdit(self.w)
+		self.errorsBoxSintactic = QPlainTextEdit(self.w)
 		metrics = QFontMetrics(self.fontConsolas)
-		self.errorsBox.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
-		self.errorsBox.setFont(self.fontConsolas)
-		self.errorsBox.setReadOnly(True)
+		self.errorsBoxSintactic.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
+		self.errorsBoxSintactic.setFont(self.fontConsolas)
+		self.errorsBoxSintactic.setReadOnly(True)
+
+		self.errorsBoxSemantic = QPlainTextEdit(self.w)
+		metrics = QFontMetrics(self.fontConsolas)
+		self.errorsBoxSemantic.setTabStopDistance(4 * metrics.horizontalAdvance(' '))
+		self.errorsBoxSemantic.setFont(self.fontConsolas)
+		self.errorsBoxSemantic.setReadOnly(True)
 
 		layout.addWidget(self.codeBox)
 		layout.addWidget(self.boton)
 		layout.addWidget(self.tabla)
-		layout.addWidget(self.errorsBox)
+		layout.addWidget(self.errorsBoxSintactic)
+		layout.addWidget(self.errorsBoxSemantic)
 
 	def open_file(self):
 		file_name, _ = QFileDialog.getOpenFileName(self, 'Abrir archivo', '', 'Archivos de código C (*.c)')
@@ -84,7 +91,7 @@ class MainWindow(QMainWindow):
 
 	def check(self):
 		
-		tokens = get_tokens(self.codeBox.toPlainText())
+		tokens, error_sintactic, error_semantic = parse(self.codeBox.toPlainText())
 
 		# Limpiar la tabla
 		self.tabla.clearContents()
@@ -98,16 +105,25 @@ class MainWindow(QMainWindow):
 			self.tabla.setItem(row_pos, 1, QTableWidgetItem(tokens[i].lexema))
 			self.tabla.setItem(row_pos, 2, QTableWidgetItem(str(tokens[i].token.value)))
 
-		# errorBox
-		self.errorsBox.clear()
+		# errorsBoxSintactic
+		self.errorsBoxSintactic.clear()
 		self.highlight_clear()
-		error_code = parse_tokens(tokens)
 
-		if (error_code.line == 0):
-			self.errorsBox.setPlainText(error_code.error_str)
+		if (error_sintactic.line == 0):
+			self.errorsBoxSintactic.setPlainText(error_sintactic.error_str)
 		else:
-			self.errorsBox.setPlainText(error_code.what())
-			self.highlight_line(error_code.line, QColor("red"))
+			self.errorsBoxSintactic.setPlainText(error_sintactic.what())
+			self.highlight_line(error_sintactic.line, QColor("red"))
+
+		# errorsBoxSintactic
+		self.errorsBoxSemantic.clear()
+		self.highlight_clear()
+
+		if (error_semantic.line == 0):
+			self.errorsBoxSemantic.setPlainText(error_semantic.error_str)
+		else:
+			self.errorsBoxSemantic.setPlainText(error_semantic.what())
+			self.highlight_line(error_semantic.line, QColor("red"))
 
 def main():
 	app = QApplication(sys.argv)

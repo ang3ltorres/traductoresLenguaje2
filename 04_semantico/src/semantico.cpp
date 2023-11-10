@@ -189,7 +189,7 @@ static void parseAssignment(const std::shared_ptr<NodeAssignment>& node)
 
 	// float-float / int-int Validation
 	if (!(find->second.type == DataType::Float && newExpression.isFloat) && !(find->second.type == DataType::Int && !newExpression.isFloat))
-		throw ErrorCode(find->second.line, "Tipo de dato incorrecto");
+		throw ErrorCode(node->lineNumber, "Tipo de dato incorrecto");
 
 	find->second.value = newExpression;
 	std::cout << newExpression.value << '\n';
@@ -300,5 +300,4 @@ void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 
 		symbolTable.pop_back();
 	}
-
 }

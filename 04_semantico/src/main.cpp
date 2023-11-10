@@ -11,7 +11,7 @@
 	#include <pybind11/stl.h>
 	namespace py = pybind11;
 
-	PYBIND11_MODULE(sintactico, m)
+	PYBIND11_MODULE(semantico, m)
 	{
 		py::enum_<Token::Type>(m, "TokenType")
 			.value("ReservedWordTrue", Token::Type::ReservedWordTrue)
@@ -84,7 +84,7 @@
 			.def_readonly("error_str", &ErrorCode::errorStr)
 			.def("what", &ErrorCode::what);
 
-		m.def("parse_tokens", &parseTokens, "Analizar sintacticamente una lista de tokens");
+		m.def("parse", &parse, "PaRsE");
 	}
 
 #else
