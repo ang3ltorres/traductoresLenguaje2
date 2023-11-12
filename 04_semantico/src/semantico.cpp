@@ -64,7 +64,23 @@ static Value parseFactor(const Node& node)
 
 			auto find = symbolTable.back().find(id->name);
 
-			return find->second.value;
+			return find->second.values.front();
+		}
+
+		// ARRAY ACCESS
+		case ASTNode::Type::Factor:
+		{
+			auto factor = std::static_pointer_cast<NodeFactor>(node);
+
+			auto id = std::static_pointer_cast<NodeIdentifier>(factor->factor);
+			auto expIndex = std::static_pointer_cast<NodeExpression>(factor->expIndex);
+
+			auto find = symbolTable.back().find(id->name);
+
+			// Evaluate
+			auto index = parseExpression(expIndex);
+
+			return find->second.values[index.value];
 		}
 
 		case ASTNode::Type::Number: case ASTNode::Type::FloatingPointNumber:
@@ -191,7 +207,22 @@ static void parseAssignment(const std::shared_ptr<NodeAssignment>& node)
 	if (!(find->second.type == DataType::Float && newExpression.isFloat) && !(find->second.type == DataType::Int && !newExpression.isFloat))
 		throw ErrorCode(node->lineNumber, "Tipo de dato incorrecto");
 
-	find->second.value = newExpression;
+	if (find->second.isArray)
+	{
+		// Index expression
+		auto indexExpression = parseExpression(std::static_pointer_cast<NodeExpression>(node->expIndex));
+
+		if (indexExpression.isFloat)
+			throw ErrorCode(node->lineNumber, std::format("No es posible acceder a un arreglo usando flotantes"));
+
+		if (indexExpression.value < 0 || indexExpression.value >= find->second.values.size())
+			throw ErrorCode(node->lineNumber, std::format("Indice fuera de rango \"{}\", el tamanio del arreglo es {}", indexExpression.value, find->second.values.size()));
+
+		find->second.values[indexExpression.value] = newExpression;
+	}
+	else
+		find->second.values.front() = newExpression;
+
 	std::cout << newExpression.value << '\n';
 }
 
@@ -215,25 +246,43 @@ static void parseDeclaration(const std::shared_ptr<NodeDeclaration>& node)
 
 	if (find == symbolTable.back().end())
 	{
-		auto assignment = std::static_pointer_cast<NodeAssignment>(node->node);
-		auto expression = std::static_pointer_cast<NodeExpression>(assignment->exp);
-
-		Value value = parseExpression(expression);
-
-		// float-float / int-int Validation
-		if (!(type == DataType::Float && value.isFloat) && !(type == DataType::Int && !value.isFloat))
-			throw ErrorCode(expression->lineNumber, "Tipo de dato incorrecto");
-
-		std::cout << value.value << '\n';
-
-		symbolTable.back()[id] = SymbolInfo
+		if (declaration)
 		{
-			static_cast<unsigned int>(symbolTable.size() - 1),
-			node->lineNumber,
-			type,
-			(declaration) ? (SymbolInfo::SymbolType::Declaration) : (SymbolInfo::SymbolType::DeclarationInnitialization),
-			(declaration) ? (Value{false, false, 0.0f}) : (value)
-		};
+			std::vector<Value> values((node->size == -1) ? (1) : (node->size), Value{false, false, 0.0f});
+
+			symbolTable.back()[id] = SymbolInfo
+			{
+				static_cast<unsigned int>(symbolTable.size() - 1),
+				node->lineNumber,
+				type,
+				SymbolInfo::SymbolType::Declaration,
+				values,
+				!(node->size == -1)
+			};
+		}
+		else
+		{
+			auto assignment = std::static_pointer_cast<NodeAssignment>(node->node);
+			auto expression = std::static_pointer_cast<NodeExpression>(assignment->exp);
+			Value value = parseExpression(expression);
+
+			// float-float / int-int Validation
+			if (!(type == DataType::Float && value.isFloat) && !(type == DataType::Int && !value.isFloat))
+				throw ErrorCode(expression->lineNumber, "Tipo de dato incorrecto");
+			
+			std::cout << value.value << '\n';
+
+			symbolTable.back()[id] = SymbolInfo
+			{
+				static_cast<unsigned int>(symbolTable.size() - 1),
+				node->lineNumber,
+				type,
+				SymbolInfo::SymbolType::DeclarationInnitialization,
+				std::vector<Value>(1, value),
+				false
+			};
+
+		}
 	}
 	else
 		throw ErrorCode(node->lineNumber, std::format("Redefinicion de la variable (Linea: {}) \"{}\"", find->second.line, id));
@@ -273,7 +322,8 @@ void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 					id->lineNumber,
 					type,
 					SymbolInfo::SymbolType::Argument,
-					value
+					std::vector<Value>(1, value),
+					false
 				};
 			}
 			else

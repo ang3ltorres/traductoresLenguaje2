@@ -10,7 +10,7 @@
 <condition>                 -> <expression> | <expression> <relationalOperator> <expression>
 <expression>                -> <term> | <term> + <expression> | <term> - <expression>
 <term>                      -> <factor> | <factor> * <term> | <factor> / <term>
-<factor>                    -> <identifier> | <number> | ( <expression> )
+<factor>                    -> <identifier> | <identifier> [ <expression> ] | <number> | ( <expression> )
 <relationalOperator>        -> < | > | <= | >= | == | !=
 <dataType>                  -> int | float | char | short | void | double | bool
 <identifier>                -> [a-zA-Z][a-zA-Z0-9_]*

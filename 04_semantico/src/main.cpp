@@ -102,8 +102,8 @@
 			Parser parser(tokens);
 			std::shared_ptr<NodeProgram> program = parser.parseProgram();
 			std::cout << "El programa no contiene errores sintacticos !!\n";
-
 			semanticAnalysis(program);
+			std::cout << "El programa no contiene errores semanticos !!\n";
 		}
 		catch (const ErrorCode& e)
 		{

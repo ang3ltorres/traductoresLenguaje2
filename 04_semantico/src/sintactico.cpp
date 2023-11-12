@@ -84,11 +84,11 @@ NodeBinaryExpression::Operation NodeBinaryExpression::toOperation(Token token)
 	}
 }
 
-NodeFactor::NodeFactor(Node factor)
-: ASTNode{ASTNode::Type::Factor, factor->lineNumber}, factor(factor) {}
+NodeFactor::NodeFactor(Node factor, Node expIndex)
+: ASTNode{ASTNode::Type::Factor, factor->lineNumber}, factor(factor), expIndex(expIndex) {}
 
-NodeAssignment::NodeAssignment(Node var, Node exp, int index)
-: ASTNode{ASTNode::Type::Assignament, var->lineNumber}, var(var), exp(exp), index(index) {}
+NodeAssignment::NodeAssignment(Node var, Node exp, Node expIndex)
+: ASTNode{ASTNode::Type::Assignament, var->lineNumber}, var(var), exp(exp), expIndex(expIndex) {}
 
 NodeDeclaration::NodeDeclaration(unsigned int line, Node dataType, Node node, int size)
 : ASTNode{ASTNode::Type::Declaration, line}, dataType(dataType), node(node), size(size) {}
@@ -218,7 +218,23 @@ Node Parser::parseFactor()
 	Token token = tokens[index];
 
 	if (token.type == Token::Type::Identifier)
-		return parseIdentifier();
+	{
+		Node identifier = parseIdentifier();
+
+		if (tokens[index].type == Token::Type::BracketOpen)
+		{
+			index++; // Saltarnos el [
+			Node expression = parseExpression();
+
+			if (tokens[index].type != Token::Type::BracketClose)
+				throw ErrorCode(tokens[index].line, "Se esperaban corchetes de cierre");
+				
+			return std::make_shared<NodeFactor>(identifier, expression);
+		}
+		else
+			return identifier;
+
+	}
 	else if ((token.type == Token::Type::Number) || (token.type == Token::Type::FloatingPointNumber))
 		return parseNumber();
 	else if (token.type == Token::Type::ParenthesisOpen)
@@ -328,7 +344,7 @@ std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 		if (tokens[index].type == Token::Type::Semicolon)
 		{
 			index++; // Saltarnos el ;
-			return std::make_shared<NodeAssignment>(identifier, expression, -1);
+			return std::make_shared<NodeAssignment>(identifier, expression, nullptr);
 		}
 		else
 			throw ErrorCode(expression->lineNumber, "Se esperaba un punto y coma");
@@ -354,7 +370,7 @@ std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 			throw ErrorCode(expression->lineNumber, "Se esperaba un punto y coma");
 
 		index++; // Saltarnos el ;
-		return std::make_shared<NodeAssignment>(identifier, expression, -1);
+		return std::make_shared<NodeAssignment>(identifier, expression, arrayIndex);
 	}
 	else
 		throw ErrorCode(identifier->lineNumber, "Se esperaba un operador de asignacion o acceso a arreglo");
@@ -376,8 +392,7 @@ std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
 		t = getNextToken();
 		if (t.type == Token::Type::Semicolon)
 		{
-			Node assignment = std::make_shared<NodeAssignment>(identifier, expression, -1);
-
+			Node assignment = std::make_shared<NodeAssignment>(identifier, expression, nullptr);
 			return std::make_shared<NodeDeclaration>(dataType->lineNumber, dataType, assignment, -1);
 		}
 		else

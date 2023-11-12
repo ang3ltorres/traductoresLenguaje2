@@ -33,7 +33,8 @@ struct SymbolInfo
 	unsigned int line;
 	DataType type;
 	SymbolType symbolType;
-	Value value;
+	std::vector<Value> values;
+	bool isArray;
 };
 
 void semanticAnalysis(const std::shared_ptr<NodeProgram>& program);

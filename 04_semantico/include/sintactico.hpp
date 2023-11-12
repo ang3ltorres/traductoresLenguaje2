@@ -139,18 +139,23 @@ struct NodeBinaryExpression : public ASTNode
 
 struct NodeFactor : public ASTNode
 {
-	NodeFactor(Node factor);
+	NodeFactor(Node factor, Node expIndex);
 
 	// Identifier, Number, Expression
 	Node factor;
+
+	// If array access -> nums[42+var1]
+	// Identifier
+	// ExpressionIndex not nullptr
+	Node expIndex;
 };
 
 struct NodeAssignment : public ASTNode
 {
-	NodeAssignment(Node var, Node exp, int index);
+	NodeAssignment(Node var, Node exp, Node expIndex);
 	Node var;
 	Node exp;
-	int index; // Index if array
+	Node expIndex;
 };
 
 struct NodeDeclaration : public ASTNode

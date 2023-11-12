@@ -1,8 +1,8 @@
 int suma(int a, int b)
 {
-	int d = 6;
-	int array[10];
-	array[d+2] = 5;
+	int c = 5;
+	int array[5];
+	array[0] = 2+c;
 
 	return 0;
 }
