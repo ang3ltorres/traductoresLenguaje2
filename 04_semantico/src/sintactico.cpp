@@ -337,9 +337,7 @@ std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 	{
 		index++; // Saltarnos el [
 
-		auto arrayIndex = parseNumber();
-		if (arrayIndex->decimal || arrayIndex->value < 0)
-			throw ErrorCode(arrayIndex->lineNumber, "Se esperaba un indice");
+		auto arrayIndex = parseExpression();
 
 		if (tokens[index].type != Token::Type::BracketClose)
 			throw ErrorCode(arrayIndex->lineNumber, "Se esperaba un corchete de cierre");
@@ -356,7 +354,7 @@ std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 			throw ErrorCode(expression->lineNumber, "Se esperaba un punto y coma");
 
 		index++; // Saltarnos el ;
-		return std::make_shared<NodeAssignment>(identifier, expression, arrayIndex->value);
+		return std::make_shared<NodeAssignment>(identifier, expression, -1);
 	}
 	else
 		throw ErrorCode(identifier->lineNumber, "Se esperaba un operador de asignacion o acceso a arreglo");

@@ -6,7 +6,7 @@
 <parameters>                -> ε | <argument> | <argument> , <parameters>
 <argument>                  -> <dataType> <identifier> | <dataType> <identifier> [ <number> ]
 <declaration>               -> <dataType> <identifier> ; | <dataType> <identifier> [ <number> ] ; | <dataType> <assignment> ;
-<assignment>                -> <identifier> = <expression> ; | <identifier> [ <number> ] = <expresion>;
+<assignment>                -> <identifier> = <expression> ; | <identifier> [ <epresion> ] = <expresion>;
 <condition>                 -> <expression> | <expression> <relationalOperator> <expression>
 <expression>                -> <term> | <term> + <expression> | <term> - <expression>
 <term>                      -> <factor> | <factor> * <term> | <factor> / <term>
