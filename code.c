@@ -9,5 +9,5 @@ int suma(int a, int b)
 
 	array[0] = nums[0+1];
 
-	return 0;
+	return 0.1;
 }

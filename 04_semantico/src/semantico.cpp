@@ -349,6 +349,15 @@ void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 				auto assignment = std::static_pointer_cast<NodeAssignment>(statement->statement);
 				parseAssignment(assignment);
 			}
+			else if (statement->statement->type == ASTNode::Type::ReturnStatement)
+			{
+				auto returnStatement = std::static_pointer_cast<NodeReturnStatement>(statement->statement);
+				auto nodeExpression = std::static_pointer_cast<NodeExpression>(returnStatement->expression);
+				auto expression = parseExpression(nodeExpression);
+
+				if ((expression.isFloat && functionType == DataType::Int) || (!expression.isFloat && functionType == DataType::Float))
+					throw ErrorCode(nodeExpression->lineNumber, std::format("Tipo de dato de retorno incorrecto"));
+			}
 		}
 
 		symbolTable.pop_back();
