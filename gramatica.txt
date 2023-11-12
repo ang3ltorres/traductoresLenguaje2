@@ -4,9 +4,9 @@
 <ifStatement>               -> if ( <condition> ) { <statement>* } | if ( <condition> ) { <statement>* } else { <statement>* }
 <returnStatement>           -> return <expression> ;
 <parameters>                -> ε | <argument> | <argument> , <parameters>
-<argument>                  -> <dataType> <identifier>
-<declaration>               -> <dataType> <identifier> ; | <dataType> <assignment> ;
-<assignment>                -> <identifier> = <expression> ;
+<argument>                  -> <dataType> <identifier> | <dataType> <identifier> [ <number> ]
+<declaration>               -> <dataType> <identifier> ; | <dataType> <identifier> [ <number> ] ; | <dataType> <assignment> ;
+<assignment>                -> <identifier> = <expression> ; | <identifier> [ <number> ] = <expresion>;
 <condition>                 -> <expression> | <expression> <relationalOperator> <expression>
 <expression>                -> <term> | <term> + <expression> | <term> - <expression>
 <term>                      -> <factor> | <factor> * <term> | <factor> / <term>

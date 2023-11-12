@@ -90,8 +90,8 @@ NodeFactor::NodeFactor(Node factor)
 NodeAssignment::NodeAssignment(Node var, Node exp)
 : ASTNode{ASTNode::Type::Assignament, var->lineNumber}, var(var), exp(exp) {}
 
-NodeDeclaration::NodeDeclaration(unsigned int line, Node dataType, Node node)
-: ASTNode{ASTNode::Type::Declaration, line}, dataType(dataType), node(node) {}
+NodeDeclaration::NodeDeclaration(unsigned int line, Node dataType, Node node, int size)
+: ASTNode{ASTNode::Type::Declaration, line}, dataType(dataType), node(node), size(size) {}
 
 NodeIfStatement::NodeIfStatement(unsigned int line, Node condition, std::vector<Node> statements, std::vector<Node> elseStatements)
 : ASTNode{ASTNode::Type::IfStatement, line}, condition(condition), statements(statements), elseStatements(elseStatements) {}
@@ -345,7 +345,7 @@ std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
 	Token t = getNextToken();
 	if (t.type == Token::Type::Semicolon)
 	{
-		return std::make_shared<NodeDeclaration>(dataType->lineNumber, dataType, identifier);
+		return std::make_shared<NodeDeclaration>(dataType->lineNumber, dataType, identifier, -1);
 	}
 	else if (t.type == Token::Type::Assignment)
 	{
@@ -355,13 +355,29 @@ std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
 		{
 			Node assignment = std::make_shared<NodeAssignment>(identifier, expression);
 
-			return std::make_shared<NodeDeclaration>(dataType->lineNumber, dataType, assignment);
+			return std::make_shared<NodeDeclaration>(dataType->lineNumber, dataType, assignment, -1);
 		}
 		else
 			throw ErrorCode(expression->lineNumber, "Se esperaba un punto y coma");
 	}
+	else if (t.type == Token::Type::BracketOpen)
+	{
+		auto arraySize = parseNumber();
+		if (arraySize->decimal || arraySize->value < 0)
+			throw ErrorCode(arraySize->lineNumber, "Se esperaba un numero entero");
+
+		t = getNextToken();
+		if (t.type != Token::Type::BracketClose)
+			throw ErrorCode(arraySize->lineNumber, "Se esperaba un corchete de cierre");
+
+		t = getNextToken();
+		if (t.type != Token::Type::Semicolon)
+			throw ErrorCode(arraySize->lineNumber, "Se esperaba un punto y coma");
+
+		return std::make_shared<NodeDeclaration>(dataType->lineNumber, dataType, identifier, arraySize->value);
+	}
 	
-	throw ErrorCode(identifier->lineNumber, "Se esperaba un operador de asignacion o un punto y coma");
+	throw ErrorCode(identifier->lineNumber, "Se esperaba un operador de asignacion, arreglo o un punto y coma");
 }
 
 Node Parser::parseCondition()

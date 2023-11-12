@@ -154,12 +154,15 @@ struct NodeAssignment : public ASTNode
 
 struct NodeDeclaration : public ASTNode
 {
-	NodeDeclaration(unsigned int line, Node dataType, Node node);
+	NodeDeclaration(unsigned int line, Node dataType, Node node, int size);
 
 	Node dataType;
 
 	// Identifier, Assignment
 	Node node;
+
+	// isArray >= 0 | -1 notArray
+	int size;
 };
 
 struct NodeLogicalExpression : public ASTNode
