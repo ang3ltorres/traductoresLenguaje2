@@ -87,8 +87,8 @@ NodeBinaryExpression::Operation NodeBinaryExpression::toOperation(Token token)
 NodeFactor::NodeFactor(Node factor)
 : ASTNode{ASTNode::Type::Factor, factor->lineNumber}, factor(factor) {}
 
-NodeAssignment::NodeAssignment(Node var, Node exp)
-: ASTNode{ASTNode::Type::Assignament, var->lineNumber}, var(var), exp(exp) {}
+NodeAssignment::NodeAssignment(Node var, Node exp, int index)
+: ASTNode{ASTNode::Type::Assignament, var->lineNumber}, var(var), exp(exp), index(index) {}
 
 NodeDeclaration::NodeDeclaration(unsigned int line, Node dataType, Node node, int size)
 : ASTNode{ASTNode::Type::Declaration, line}, dataType(dataType), node(node), size(size) {}
@@ -328,13 +328,38 @@ std::shared_ptr<NodeAssignment> Parser::parseAssignment()
 		if (tokens[index].type == Token::Type::Semicolon)
 		{
 			index++; // Saltarnos el ;
-			return std::make_shared<NodeAssignment>(identifier, expression);
+			return std::make_shared<NodeAssignment>(identifier, expression, -1);
 		}
 		else
 			throw ErrorCode(expression->lineNumber, "Se esperaba un punto y coma");
 	}
+	else if (tokens[index].type == Token::Type::BracketOpen)
+	{
+		index++; // Saltarnos el [
+
+		auto arrayIndex = parseNumber();
+		if (arrayIndex->decimal || arrayIndex->value < 0)
+			throw ErrorCode(arrayIndex->lineNumber, "Se esperaba un indice");
+
+		if (tokens[index].type != Token::Type::BracketClose)
+			throw ErrorCode(arrayIndex->lineNumber, "Se esperaba un corchete de cierre");
+
+		index++; // Saltarnos el ]
+		if (tokens[index].type != Token::Type::Assignment)
+			throw ErrorCode(identifier->lineNumber, "Se esperaba un operador de asignacion");
+
+		index++; // Saltarnos el =
+		Node expression = parseExpression();
+		notEnd();
+
+		if (tokens[index].type != Token::Type::Semicolon)
+			throw ErrorCode(expression->lineNumber, "Se esperaba un punto y coma");
+
+		index++; // Saltarnos el ;
+		return std::make_shared<NodeAssignment>(identifier, expression, arrayIndex->value);
+	}
 	else
-		throw ErrorCode(identifier->lineNumber, "Se esperaba un operador de asignacion");
+		throw ErrorCode(identifier->lineNumber, "Se esperaba un operador de asignacion o acceso a arreglo");
 }
 
 std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
@@ -353,7 +378,7 @@ std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
 		t = getNextToken();
 		if (t.type == Token::Type::Semicolon)
 		{
-			Node assignment = std::make_shared<NodeAssignment>(identifier, expression);
+			Node assignment = std::make_shared<NodeAssignment>(identifier, expression, -1);
 
 			return std::make_shared<NodeDeclaration>(dataType->lineNumber, dataType, assignment, -1);
 		}
@@ -364,7 +389,7 @@ std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
 	{
 		auto arraySize = parseNumber();
 		if (arraySize->decimal || arraySize->value < 0)
-			throw ErrorCode(arraySize->lineNumber, "Se esperaba un numero entero");
+			throw ErrorCode(arraySize->lineNumber, "Se esperaba un indice");
 
 		t = getNextToken();
 		if (t.type != Token::Type::BracketClose)

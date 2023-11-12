@@ -147,9 +147,10 @@ struct NodeFactor : public ASTNode
 
 struct NodeAssignment : public ASTNode
 {
-	NodeAssignment(Node var, Node exp);
+	NodeAssignment(Node var, Node exp, int index);
 	Node var;
 	Node exp;
+	int index; // Index if array
 };
 
 struct NodeDeclaration : public ASTNode
