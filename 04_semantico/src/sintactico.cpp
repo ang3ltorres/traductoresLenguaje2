@@ -495,7 +495,7 @@ Node Parser::parseIfStatement()
 
 		t = getNextToken();
 		if (t.type != Token::Type::BraceOpen)
-			throw ErrorCode(tokens[index-2].line, "Se esperaba un corchete abre");
+			throw ErrorCode(tokens[index-2].line, "Se esperaba llaves abre");
 
 		notEnd();
 		if (tokens[index].type != Token::Type::BraceClose)

@@ -44,6 +44,66 @@ Value Value::operator/(const Value& other)
 	};
 }
 
+Value Value::operator>(const Value& other)
+{
+	return Value
+	{
+		true,
+		other.isFloat || this->isFloat,
+		(this->value > other.value) ? 1.0f : 0.0f
+	};
+}
+
+Value Value::operator<(const Value& other)
+{
+	return Value
+	{
+		true,
+		other.isFloat || this->isFloat,
+		(this->value < other.value) ? 1.0f : 0.0f
+	};
+}
+
+Value Value::operator>=(const Value& other)
+{
+	return Value
+	{
+		true,
+		other.isFloat || this->isFloat,
+		(this->value >= other.value) ? 1.0f : 0.0f
+	};
+}
+
+Value Value::operator<=(const Value& other)
+{
+	return Value
+	{
+		true,
+		other.isFloat || this->isFloat,
+		(this->value <= other.value) ? 1.0f : 0.0f
+	};
+}
+
+Value Value::operator==(const Value& other)
+{
+	return Value
+	{
+		true,
+		other.isFloat || this->isFloat,
+		(this->value == other.value) ? 1.0f : 0.0f
+	};
+}
+
+Value Value::operator!=(const Value& other)
+{
+	return Value
+	{
+		true,
+		other.isFloat || this->isFloat,
+		(this->value != other.value) ? 1.0f : 0.0f
+	};
+}
+
 static std::vector<std::unordered_map<std::string, SymbolInfo>> symbolTable;
 
 ///
@@ -52,6 +112,8 @@ static Value parseTerm(const Node& node);
 static Value parseExpression(const Node& node);
 static void parseAssignment(const std::shared_ptr<NodeAssignment>& node);
 static void parseDeclaration(const std::shared_ptr<NodeDeclaration>& node);
+static void parseIfStatement(const std::shared_ptr<NodeIfStatement>& ifStatement, DataType functionType);
+static void parseStatements(const std::vector<Node>& statements, DataType functionType);
 ///
 
 static Value parseFactor(const Node& node)
@@ -62,7 +124,18 @@ static Value parseFactor(const Node& node)
 		{
 			auto id = std::static_pointer_cast<NodeIdentifier>(node);
 
-			auto find = symbolTable.back().find(id->name);
+			// Check symbol table
+			bool found = false;
+			static std::unordered_map<std::string, SymbolInfo>::iterator find;
+			for (auto& st : symbolTable)
+			{
+				if ((find = st.find(id->name)) != symbolTable.back().end())
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found) throw ErrorCode(node->lineNumber, std::format("La variable \"{}\" no esta declarada previamente", id->name));
 
 			return find->second.values.front();
 		}
@@ -74,11 +147,21 @@ static Value parseFactor(const Node& node)
 			auto id = std::static_pointer_cast<NodeIdentifier>(arrayAccess->identifier);
 			auto expIndex = std::static_pointer_cast<NodeExpression>(arrayAccess->expIndex);
 
-			auto find = symbolTable.back().find(id->name);
+			// Check symbol table
+			bool found = false;
+			static std::unordered_map<std::string, SymbolInfo>::iterator find;
+			for (auto& st : symbolTable)
+			{
+				if ((find = st.find(id->name)) != symbolTable.back().end())
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found) throw ErrorCode(node->lineNumber, std::format("La variable \"{}\" no esta declarada previamente", id->name));
 
 			// Evaluate
 			auto index = parseExpression(expIndex);
-
 			return find->second.values[index.value];
 		}
 
@@ -173,6 +256,14 @@ static Value parseExpression(const Node& node)
 			{
 				case NodeBinaryExpression::Operation::Addition: return (parseTerm(term) + parseExpression(expression));
 				case NodeBinaryExpression::Operation::Subtraction: return (parseTerm(term) - parseExpression(expression));
+				
+				case NodeBinaryExpression::Operation::GreaterThan: return (parseTerm(term) > parseExpression(expression));
+				case NodeBinaryExpression::Operation::LessThan: return (parseTerm(term) < parseExpression(expression));
+				case NodeBinaryExpression::Operation::GreaterThanOrEqual: return (parseTerm(term) >= parseExpression(expression));
+				case NodeBinaryExpression::Operation::LessThanOrEqual: return (parseTerm(term) <= parseExpression(expression));
+				case NodeBinaryExpression::Operation::EqualTo: return (parseTerm(term) == parseExpression(expression));
+				case NodeBinaryExpression::Operation::NotEqualTo: return (parseTerm(term) != parseExpression(expression));
+
 				default: throw ErrorCode(node->lineNumber, "Nodo invalido");
 			}
 		}
@@ -194,10 +285,18 @@ static void parseAssignment(const std::shared_ptr<NodeAssignment>& node)
 	auto id = std::static_pointer_cast<NodeIdentifier>(node->var)->name;
 
 	// Check symbol table
-	auto find = symbolTable.back().find(id);
+	bool found = false;
+	static std::unordered_map<std::string, SymbolInfo>::iterator find;
+	for (auto& st : symbolTable)
+	{
+		if ((find = st.find(id)) != symbolTable.back().end())
+		{
+			found = true;
+			break;
+		}
+	}
 
-	if (find == symbolTable.back().end())
-		throw ErrorCode(node->lineNumber, std::format("La variable \"{}\" no esta declarada previamente", id));
+	if (!found) throw ErrorCode(node->lineNumber, std::format("La variable \"{}\" no esta declarada previamente", id));
 	
 	// Evaluate expression, Change value
 	auto newExpression = parseExpression(std::static_pointer_cast<NodeExpression>(node->exp));
@@ -240,55 +339,102 @@ static void parseDeclaration(const std::shared_ptr<NodeDeclaration>& node)
 	else		
 		id = std::static_pointer_cast<NodeIdentifier>(std::static_pointer_cast<NodeAssignment>(node->node)->var)->name;
 
-	// Check symbol table
-	auto find = symbolTable.back().find(id);
+	// Check symbol table for redeclaration
+	static std::unordered_map<std::string, SymbolInfo>::const_iterator find;
+	for (const auto& st : symbolTable)
+		if ((find = st.find(id)) != symbolTable.back().end())
+			throw ErrorCode(node->lineNumber, std::format("Redefinicion de la variable (Linea: {}) \"{}\"", find->second.line, id));
 
-	if (find == symbolTable.back().end())
+	if (declaration)
 	{
-		if (declaration)
+		if (node->size == 0)
+			throw ErrorCode(node->lineNumber, "No es posible declarar un arreglo vacio");
+
+		std::vector<Value> values((node->size == -1) ? (1) : (node->size), Value{false, false, 0.0f});
+
+		symbolTable.back()[id] = SymbolInfo
 		{
-			
-			if (node->size == 0)
-				throw ErrorCode(node->lineNumber, "No es posible declarar un arreglo vacio");
-
-			std::vector<Value> values((node->size == -1) ? (1) : (node->size), Value{false, false, 0.0f});
-
-			symbolTable.back()[id] = SymbolInfo
-			{
-				static_cast<unsigned int>(symbolTable.size() - 1),
-				node->lineNumber,
-				type,
-				SymbolInfo::SymbolType::Declaration,
-				values,
-				!(node->size == -1)
-			};
-		}
-		else
-		{
-			auto assignment = std::static_pointer_cast<NodeAssignment>(node->node);
-			auto expression = std::static_pointer_cast<NodeExpression>(assignment->exp);
-			Value value = parseExpression(expression);
-
-			// float-float / int-int Validation
-			if (!(type == DataType::Float && value.isFloat) && !(type == DataType::Int && !value.isFloat))
-				throw ErrorCode(expression->lineNumber, "Tipo de dato incorrecto");
-			
-			std::cout << value.value << '\n';
-
-			symbolTable.back()[id] = SymbolInfo
-			{
-				static_cast<unsigned int>(symbolTable.size() - 1),
-				node->lineNumber,
-				type,
-				SymbolInfo::SymbolType::DeclarationInnitialization,
-				std::vector<Value>(1, value),
-				false
-			};
-
-		}
+			static_cast<unsigned int>(symbolTable.size() - 1),
+			node->lineNumber,
+			type,
+			SymbolInfo::SymbolType::Declaration,
+			values,
+			!(node->size == -1)
+		};
 	}
 	else
-		throw ErrorCode(node->lineNumber, std::format("Redefinicion de la variable (Linea: {}) \"{}\"", find->second.line, id));
+	{
+		auto assignment = std::static_pointer_cast<NodeAssignment>(node->node);
+		auto expression = std::static_pointer_cast<NodeExpression>(assignment->exp);
+		Value value = parseExpression(expression);
+
+		// float-float / int-int Validation
+		if (!(type == DataType::Float && value.isFloat) && !(type == DataType::Int && !value.isFloat))
+			throw ErrorCode(expression->lineNumber, "Tipo de dato incorrecto");
+		
+		std::cout << value.value << '\n';
+
+		symbolTable.back()[id] = SymbolInfo
+		{
+			static_cast<unsigned int>(symbolTable.size() - 1),
+			node->lineNumber,
+			type,
+			SymbolInfo::SymbolType::DeclarationInnitialization,
+			std::vector<Value>(1, value),
+			false
+		};
+
+	}
+}
+
+static void parseStatements(const std::vector<Node>& statements, DataType functionType)
+{
+	for (const auto& i : statements)
+	{
+		// Un-wrap statement
+		auto statement = std::static_pointer_cast<NodeStatement>(i);
+
+		if (statement->statement->type == ASTNode::Type::Declaration)
+		{
+			auto declaration = std::static_pointer_cast<NodeDeclaration>(statement->statement);
+			parseDeclaration(declaration);
+		}
+		else if (statement->statement->type == ASTNode::Type::Assignament)
+		{
+			auto assignment = std::static_pointer_cast<NodeAssignment>(statement->statement);
+			parseAssignment(assignment);
+		}
+		else if (statement->statement->type == ASTNode::Type::ReturnStatement)
+		{
+			auto returnStatement = std::static_pointer_cast<NodeReturnStatement>(statement->statement);
+			auto nodeExpression = std::static_pointer_cast<NodeExpression>(returnStatement->expression);
+			auto expression = parseExpression(nodeExpression);
+
+			if ((expression.isFloat && functionType == DataType::Int) || (!expression.isFloat && functionType == DataType::Float))
+				throw ErrorCode(nodeExpression->lineNumber, std::format("Tipo de dato de retorno incorrecto"));
+		}
+		else if (statement->statement->type == ASTNode::Type::IfStatement)
+		{
+			auto ifStatement = std::static_pointer_cast<NodeIfStatement>(statement->statement);
+			parseIfStatement(ifStatement, functionType);
+		}
+	}
+}
+
+static void parseIfStatement(const std::shared_ptr<NodeIfStatement>& ifStatement, DataType functionType)
+{
+	auto nodeCondition = std::static_pointer_cast<NodeCondition>(ifStatement->condition);
+	auto conditionValue = parseExpression(nodeCondition->condition);
+	std::cout << conditionValue.value << '\n';
+
+	symbolTable.push_back(std::unordered_map<std::string, SymbolInfo>());
+	
+	if (conditionValue.value != 0.0f)
+		parseStatements(ifStatement->statements, functionType);
+	else
+		parseStatements(ifStatement->elseStatements, functionType);
+
+	symbolTable.pop_back();
 }
 
 void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
@@ -334,31 +480,7 @@ void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 		}
 
 		// Statements
-		for (const auto& i : function->statements)
-		{
-			// Un-wrap statement
-			auto statement = std::static_pointer_cast<NodeStatement>(i);
-
-			if (statement->statement->type == ASTNode::Type::Declaration)
-			{
-				auto declaration = std::static_pointer_cast<NodeDeclaration>(statement->statement);
-				parseDeclaration(declaration);
-			}
-			else if (statement->statement->type == ASTNode::Type::Assignament)
-			{
-				auto assignment = std::static_pointer_cast<NodeAssignment>(statement->statement);
-				parseAssignment(assignment);
-			}
-			else if (statement->statement->type == ASTNode::Type::ReturnStatement)
-			{
-				auto returnStatement = std::static_pointer_cast<NodeReturnStatement>(statement->statement);
-				auto nodeExpression = std::static_pointer_cast<NodeExpression>(returnStatement->expression);
-				auto expression = parseExpression(nodeExpression);
-
-				if ((expression.isFloat && functionType == DataType::Int) || (!expression.isFloat && functionType == DataType::Float))
-					throw ErrorCode(nodeExpression->lineNumber, std::format("Tipo de dato de retorno incorrecto"));
-			}
-		}
+		parseStatements(function->statements, functionType);
 
 		symbolTable.pop_back();
 	}

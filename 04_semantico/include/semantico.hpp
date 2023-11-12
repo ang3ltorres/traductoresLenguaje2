@@ -16,6 +16,13 @@ struct Value
 	Value operator-(const Value& other);
 	Value operator*(const Value& other);
 	Value operator/(const Value& other);
+	
+	Value operator>(const Value& other);
+	Value operator<(const Value& other);
+	Value operator>=(const Value& other);
+	Value operator<=(const Value& other);
+	Value operator==(const Value& other);
+	Value operator!=(const Value& other);
 };
 
 struct SymbolInfo
