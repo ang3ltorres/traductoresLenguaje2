@@ -247,6 +247,10 @@ static void parseDeclaration(const std::shared_ptr<NodeDeclaration>& node)
 	{
 		if (declaration)
 		{
+			
+			if (node->size == 0)
+				throw ErrorCode(node->lineNumber, "No es posible declarar un arreglo vacio");
+
 			std::vector<Value> values((node->size == -1) ? (1) : (node->size), Value{false, false, 0.0f});
 
 			symbolTable.back()[id] = SymbolInfo

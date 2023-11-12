@@ -231,7 +231,9 @@ Node Parser::parseFactor()
 
 			if (tokens[index].type != Token::Type::BracketClose)
 				throw ErrorCode(tokens[index].line, "Se esperaban corchetes de cierre");
-				
+
+			index++; // Saltarnos el ]
+
 			return std::make_shared<NodeArrayAccess>(identifier, expression);
 		}
 		else
