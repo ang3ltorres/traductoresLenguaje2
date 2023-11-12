@@ -350,6 +350,23 @@ std::vector<Token> getTokens(const std::string& code)
 			tokens.push_back(Token{Token::Type::Unknown, w.first, w.second});
 	}
 
+	// Eliminar comentarios
+	for (auto i = tokens.begin(); i != tokens.end(); i++)
+	{
+		bool isComment = (i->lexema.size() >= 2 && i->lexema[0] == '/' && i->lexema[1] == '/');
+
+		if (isComment)
+		{
+			unsigned int line = i->line;
+			tokens.erase(i);
+
+			while (i->line == line)
+				tokens.erase(i);
+
+			i--;
+		}
+	}
+
 	// Agregar un 0 a cada numero negativo sin numero a la izquierda...
 	// int a = -2; -> int a = 0-2;
 	// int a = 32-2; -> int a = 32-2;
