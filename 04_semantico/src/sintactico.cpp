@@ -84,8 +84,11 @@ NodeBinaryExpression::Operation NodeBinaryExpression::toOperation(Token token)
 	}
 }
 
-NodeFactor::NodeFactor(Node factor, Node expIndex)
-: ASTNode{ASTNode::Type::Factor, factor->lineNumber}, factor(factor), expIndex(expIndex) {}
+NodeFactor::NodeFactor(Node factor)
+: ASTNode{ASTNode::Type::Factor, factor->lineNumber}, factor(factor) {}
+
+NodeArrayAccess::NodeArrayAccess(Node identifier, Node expIndex)
+: ASTNode{ASTNode::Type::ArrayAccess, identifier->lineNumber}, identifier(identifier), expIndex(expIndex) {}
 
 NodeAssignment::NodeAssignment(Node var, Node exp, Node expIndex)
 : ASTNode{ASTNode::Type::Assignament, var->lineNumber}, var(var), exp(exp), expIndex(expIndex) {}
@@ -229,7 +232,7 @@ Node Parser::parseFactor()
 			if (tokens[index].type != Token::Type::BracketClose)
 				throw ErrorCode(tokens[index].line, "Se esperaban corchetes de cierre");
 				
-			return std::make_shared<NodeFactor>(identifier, expression);
+			return std::make_shared<NodeArrayAccess>(identifier, expression);
 		}
 		else
 			return identifier;

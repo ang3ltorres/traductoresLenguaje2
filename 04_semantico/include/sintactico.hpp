@@ -24,6 +24,7 @@ struct ASTNode
 		Parameters,
 		Term,
 		Factor,
+		ArrayAccess,
 		Number,
 		FloatingPointNumber,
 		DataType,
@@ -139,14 +140,17 @@ struct NodeBinaryExpression : public ASTNode
 
 struct NodeFactor : public ASTNode
 {
-	NodeFactor(Node factor, Node expIndex);
+	NodeFactor(Node factor);
 
-	// Identifier, Number, Expression
+	// Identifier, Number, Expression, ArrayAccess
 	Node factor;
+};
 
-	// If array access -> nums[42+var1]
-	// Identifier
-	// ExpressionIndex not nullptr
+struct NodeArrayAccess : public ASTNode
+{
+	NodeArrayAccess(Node identifier, Node expIndex);
+
+	Node identifier;
 	Node expIndex;
 };
 
@@ -252,6 +256,7 @@ public:
 	Node parseExpression();
 	Node parseTerm();
 	Node parseFactor();
+	// Node parseArrayAccess();
 	Node parseArgument();
 	Node parseParameters();
 	Node parseReturnStatement();

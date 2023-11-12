@@ -67,13 +67,12 @@ static Value parseFactor(const Node& node)
 			return find->second.values.front();
 		}
 
-		// ARRAY ACCESS
-		case ASTNode::Type::Factor:
+		case ASTNode::Type::ArrayAccess:
 		{
-			auto factor = std::static_pointer_cast<NodeFactor>(node);
+			auto arrayAccess = std::static_pointer_cast<NodeArrayAccess>(node);
 
-			auto id = std::static_pointer_cast<NodeIdentifier>(factor->factor);
-			auto expIndex = std::static_pointer_cast<NodeExpression>(factor->expIndex);
+			auto id = std::static_pointer_cast<NodeIdentifier>(arrayAccess->identifier);
+			auto expIndex = std::static_pointer_cast<NodeExpression>(arrayAccess->expIndex);
 
 			auto find = symbolTable.back().find(id->name);
 
