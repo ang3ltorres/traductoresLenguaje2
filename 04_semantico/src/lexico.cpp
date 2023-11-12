@@ -350,5 +350,26 @@ std::vector<Token> getTokens(const std::string& code)
 			tokens.push_back(Token{Token::Type::Unknown, w.first, w.second});
 	}
 
+	// Agregar un 0 a cada numero negativo sin numero a la izquierda...
+	// int a = -2; -> int a = 0-2;
+	// int a = 32-2; -> int a = 32-2;
+	for (auto i = tokens.begin(); i != tokens.end(); i++)
+	{
+		if
+		(
+			(i->type == Token::Type::Subtraction)
+			&& ((i+1)->type == Token::Type::Number || (i+1)->type == Token::Type::FloatingPointNumber)
+			&& ((i-1)->type != Token::Type::Number && (i-1)->type != Token::Type::FloatingPointNumber)
+		)
+		{
+			if ((i+1)->type == Token::Type::Number)
+				tokens.insert(i, Token{Token::Type::Number, "0", i->line});
+			else
+				tokens.insert(i, Token{Token::Type::FloatingPointNumber, "0.0", i->line});
+				
+			i++;
+		}
+	}
+
 	return tokens;
 }
