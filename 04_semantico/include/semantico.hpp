@@ -46,8 +46,16 @@ struct SymbolInfo
 	bool isArray;
 
 	// FUNCTION
-	bool isFunction;
+	enum class FunctionType : int
+	{
+		None,
+		Declaration,
+		Implementation
+	};
+
+	FunctionType functionType;
 	std::vector<NodeArgument> parameters; // Parameters
+	std::vector<Node> statements; // Statements
 };
 
 void semanticAnalysis(const std::shared_ptr<NodeProgram>& program);

@@ -365,8 +365,9 @@ static void parseDeclaration(const std::shared_ptr<NodeDeclaration>& node)
 			SymbolInfo::SymbolType::Declaration,
 			values,
 			!(node->size == -1),
-			false,
-			std::vector<NodeArgument>()
+			SymbolInfo::FunctionType::None,
+			std::vector<NodeArgument>(),
+			std::vector<Node>()
 		};
 	}
 	else
@@ -389,8 +390,9 @@ static void parseDeclaration(const std::shared_ptr<NodeDeclaration>& node)
 			SymbolInfo::SymbolType::DeclarationInnitialization,
 			std::vector<Value>(1, value),
 			false,
-			false,
-			std::vector<NodeArgument>()
+			SymbolInfo::FunctionType::None,
+			std::vector<NodeArgument>(),
+			std::vector<Node>()
 		};
 
 	}
@@ -469,8 +471,9 @@ static void parseParameters(const std::shared_ptr<NodeParamaters> parameters)
 				SymbolInfo::SymbolType::Argument,
 				values,
 				!(argument->size == -1),
-				false,
-				std::vector<NodeArgument>()
+				SymbolInfo::FunctionType::None,
+				std::vector<NodeArgument>(),
+				std::vector<Node>()
 			};
 		}
 		else
@@ -487,9 +490,6 @@ void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 	{
 		if (functionNode->type == ASTNode::Type::FunctionDeclaration)
 		{
-
-			// (find = st.find(id)) != symbolTable.back().end()
-
 			auto functionDeclaration = std::static_pointer_cast<NodeFunctionDeclaration>(functionNode);
 
 			auto id = std::static_pointer_cast<NodeIdentifier>(functionDeclaration->identifier)->name;
@@ -522,23 +522,62 @@ void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 				SymbolInfo::SymbolType::Argument,
 				std::vector<Value>(),
 				false,
-				true,
-				args
+				SymbolInfo::FunctionType::Declaration,
+				args,
+				std::vector<Node>(),
 			};
 		}
 		else if (functionNode->type == ASTNode::Type::Function)
 		{
 			auto function = std::static_pointer_cast<NodeFunction>(functionNode);
 
+			auto id = std::static_pointer_cast<NodeIdentifier>(function->identifier)->name;
+			auto find = symbolTable.front().find(id);
+
 			// Function type
 			DataType functionType = std::static_pointer_cast<NodeDataType>(function->datatype)->dataType;
 
 			// Parameters
 			auto nodeParameters = std::static_pointer_cast<NodeParamaters>(function->parameters);
+			symbolTable.push_back(std::unordered_map<std::string, SymbolInfo>());
 			parseParameters(nodeParameters);
+
+			std::vector<NodeArgument> args;
+			for (const auto& a : nodeParameters->args)
+			{
+				auto argument = std::static_pointer_cast<NodeArgument>(a);
+				args.push_back(*argument);
+			}
 
 			// Statements
 			parseStatements(function->statements, functionType);
+
+			// Value
+			auto value = SymbolInfo
+			{
+				0,
+				function->lineNumber,
+				functionType,
+				SymbolInfo::SymbolType::Argument,
+				std::vector<Value>(),
+				false,
+				SymbolInfo::FunctionType::Implementation,
+				args,
+				function->statements
+			};
+
+			if (find != symbolTable.back().end())
+			{
+				if (find->second.functionType == SymbolInfo::FunctionType::Declaration)
+					find->second = value;
+				else if (find->second.functionType == SymbolInfo::FunctionType::Implementation)
+					throw ErrorCode(function->lineNumber, std::format("Reimplementacion de la funcion (Linea: {}) \"{}\"", find->second.line, id));
+			}
+			else
+				symbolTable.back()[id] = value;
+
+			// POp
+			symbolTable.pop_back();
 		}
 	}
 	symbolTable.pop_back();
