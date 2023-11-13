@@ -458,12 +458,12 @@ void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 
 			if (symbolTable.back().find(id->name) == symbolTable.back().end())
 			{
-				Value value = Value
-				{
-					true,
-					(type == DataType::Float) || (type == DataType::Double),
-					0.0f
-				};
+				if (argument->size == 0)
+					throw ErrorCode(argument->lineNumber, "No es posible declarar un arreglo vacio");
+
+				std::vector<Value> values((argument->size == -1 ? 1 : argument->size), Value{false, type == DataType::Float, 0.0f});
+
+				std::cout << "SIZE: " << argument->size << "\n";
 
 				symbolTable.back()[id->name] = SymbolInfo
 				{
@@ -471,8 +471,8 @@ void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 					id->lineNumber,
 					type,
 					SymbolInfo::SymbolType::Argument,
-					std::vector<Value>(1, value),
-					false
+					values,
+					!(argument->size == -1)
 				};
 			}
 			else

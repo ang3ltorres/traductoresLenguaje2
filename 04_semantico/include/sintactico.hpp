@@ -59,10 +59,13 @@ struct NodeDataType: public ASTNode
 
 struct NodeArgument: public ASTNode
 {
-	NodeArgument(unsigned int line, Node dataType, Node identifier);
+	NodeArgument(unsigned int line, Node dataType, Node identifier, int size);
 
 	Node dataType;
 	Node identifier;
+
+	// isArray >= 0 | -1 notArray
+	int size;
 };
 
 struct NodeParamaters: public ASTNode

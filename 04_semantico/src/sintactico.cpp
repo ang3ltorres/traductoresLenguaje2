@@ -43,8 +43,8 @@ NodeNumber::NodeNumber(unsigned int line, float value, bool decimal)
 NodeDataType::NodeDataType(unsigned int line, DataType dataType)
 : ASTNode{ASTNode::Type::DataType, line}, dataType(dataType) {}
 
-NodeArgument::NodeArgument(unsigned int line, Node dataType, Node identifier)
-: ASTNode{ASTNode::Type::Argument, line}, dataType(dataType), identifier(identifier) {}
+NodeArgument::NodeArgument(unsigned int line, Node dataType, Node identifier, int size)
+: ASTNode{ASTNode::Type::Argument, line}, dataType(dataType), identifier(identifier), size(size) {}
 
 NodeParamaters::NodeParamaters(unsigned int line, std::vector<Node> args)
 : ASTNode{ASTNode::Type::Parameters, line}, args(args) {}
@@ -264,7 +264,22 @@ Node Parser::parseArgument()
 	Node dataType = parseDataType();
 	Node identifier = parseIdentifier();
 
-	return std::make_shared<NodeArgument>(dataType->lineNumber, dataType, identifier);
+	notEnd();
+	if (tokens[index].type == Token::Type::BracketOpen)
+	{
+		index++; // Saltarnos el [
+		auto number = parseNumber();
+		if (number->decimal)
+			throw ErrorCode(number->lineNumber, "Tamanio de arreglo invalido");
+
+		if (tokens[index].type != Token::Type::BracketClose)
+			throw ErrorCode(number->lineNumber, "Se esperaba corchete de cierre");		
+		index++;
+
+		return std::make_shared<NodeArgument>(dataType->lineNumber, dataType, identifier, number->value);
+	}
+
+	return std::make_shared<NodeArgument>(dataType->lineNumber, dataType, identifier, -1);
 }
 
 Node Parser::parseParameters()
