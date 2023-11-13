@@ -20,10 +20,14 @@ static bool isDataType(Token::Type type)
 	return std::any_of(dataTypes.begin(), dataTypes.end(), [type](Token::Type dataType){ return type == dataType; });
 };
 
-static NodeBinaryExpression::Operation isRelationalOperator(Token::Type type)
+static NodeBinaryExpression::Operation tokenTypeToOperation(Token::Type type)
 {
 	switch (type)
 	{
+		case Token::Type::Addition:					return NodeBinaryExpression::Operation::Addition;
+		case Token::Type::Subtraction:				return NodeBinaryExpression::Operation::Subtraction;
+		case Token::Type::Multiplication:			return NodeBinaryExpression::Operation::Multiplication;
+		case Token::Type::Division:					return NodeBinaryExpression::Operation::Division;
 		case Token::Type::LessThan:					return NodeBinaryExpression::Operation::LessThan;
 		case Token::Type::GreaterThan:				return NodeBinaryExpression::Operation::GreaterThan;
 		case Token::Type::LessThanOrEqual:			return NodeBinaryExpression::Operation::LessThanOrEqual;
@@ -51,9 +55,6 @@ NodeParamaters::NodeParamaters(unsigned int line, std::vector<Node> args)
 
 NodeExpression::NodeExpression(Node term)
 : ASTNode{ASTNode::Type::Expression, term->lineNumber}, term(term) {}
-
-NodeCondition::NodeCondition(unsigned int line, Node condition)
-: ASTNode{ASTNode::Type::Condition, line}, condition(condition) {}
 
 NodeTerm::NodeTerm(Node factor)
 : ASTNode{ASTNode::Type::Term, factor->lineNumber}, factor(factor) {}
@@ -96,8 +97,8 @@ NodeAssignment::NodeAssignment(Node var, Node exp, Node expIndex)
 NodeDeclaration::NodeDeclaration(unsigned int line, Node dataType, Node node, int size)
 : ASTNode{ASTNode::Type::Declaration, line}, dataType(dataType), node(node), size(size) {}
 
-NodeIfStatement::NodeIfStatement(unsigned int line, Node condition, std::vector<Node> statements, std::vector<Node> elseStatements)
-: ASTNode{ASTNode::Type::IfStatement, line}, condition(condition), statements(statements), elseStatements(elseStatements) {}
+NodeIfStatement::NodeIfStatement(unsigned int line, Node expression, std::vector<Node> statements, std::vector<Node> elseStatements)
+: ASTNode{ASTNode::Type::IfStatement, line}, expression(expression), statements(statements), elseStatements(elseStatements) {}
 
 NodeStatement::NodeStatement(unsigned int line, Node statement)
 : ASTNode{ASTNode::Type::Statement, line}, statement(statement) {}
@@ -178,13 +179,16 @@ Node Parser::parseExpression()
 {
 	Node leftTerm = parseTerm();
 	notEnd();
-	if (tokens[index].type == Token::Type::Addition || tokens[index].type == Token::Type::Subtraction)
+
+	auto operation = tokenTypeToOperation(tokens[index].type);
+
+	if (operation != NodeBinaryExpression::Operation::Unknown)
 	{
 		Token op = getNextToken();
 		Node rightTerm = parseExpression();
 		return std::make_shared<NodeBinaryExpression>
 		(
-			(op.type == Token::Type::Addition) ? NodeBinaryExpression::Operation::Addition : NodeBinaryExpression::Operation::Subtraction,
+			operation,
 			NodeBinaryExpression::Type::Expression,
 			leftTerm,
 			rightTerm
@@ -438,27 +442,6 @@ std::shared_ptr<NodeDeclaration> Parser::parseDeclaration()
 	throw ErrorCode(identifier->lineNumber, "Se esperaba un operador de asignacion, arreglo o un punto y coma");
 }
 
-Node Parser::parseCondition()
-{
-
-	Node left = parseExpression();
-	notEnd();
-	NodeBinaryExpression::Operation op = isRelationalOperator(tokens[index].type);
-
-	if (op != NodeBinaryExpression::Operation::Unknown)
-	{
-		index++; // Saltarnos el op
-
-		Node right = parseExpression();
-
-		return std::make_shared<NodeCondition>(right->lineNumber,
-			std::make_shared<NodeBinaryExpression>(op, NodeBinaryExpression::Type::Expression, left, right)
-		);
-	}
-	else
-		return std::make_shared<NodeCondition>(left->lineNumber, left);
-}
-
 Node Parser::parseIfStatement()
 {
 	unsigned int ifLineNumber;
@@ -473,7 +456,7 @@ Node Parser::parseIfStatement()
 	if (t.type != Token::Type::ParenthesisOpen)
 		throw ErrorCode(tokens[index-2].line, "Se esperaba un parentesis abre");
 
-	Node condition = parseCondition();
+	Node expression = parseExpression();
 
 	t = getNextToken();
 	if (t.type != Token::Type::ParenthesisClose)
@@ -527,7 +510,7 @@ Node Parser::parseIfStatement()
 		index++; // Saltarnos el }	
 	}
 
-	return std::make_shared<NodeIfStatement>(ifLineNumber, condition, statements, elseStatements);
+	return std::make_shared<NodeIfStatement>(ifLineNumber, expression, statements, elseStatements);
 }
 
 std::shared_ptr<NodeStatement> Parser::parseStatement()

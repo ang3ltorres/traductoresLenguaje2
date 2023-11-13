@@ -83,14 +83,6 @@ struct NodeExpression: public ASTNode
 	Node term;
 };
 
-struct NodeCondition : public ASTNode
-{
-	NodeCondition(unsigned int line, Node condition);
-
-	// Expression, BinaryExpression<Expression (rop) Expression>
-	Node condition;
-};
-
 struct NodeTerm : public ASTNode
 {
 	NodeTerm(Node factor);
@@ -204,9 +196,9 @@ struct NodeRelationalExpression : public ASTNode
 
 struct NodeIfStatement : public ASTNode
 {
-	NodeIfStatement(unsigned int line, Node condition, std::vector<Node> statements, std::vector<Node> elseStatements);
+	NodeIfStatement(unsigned int line, Node expression, std::vector<Node> statements, std::vector<Node> elseStatements);
 
-	Node condition;
+	Node expression;
 	std::vector<Node> statements;
 	std::vector<Node> elseStatements;
 };

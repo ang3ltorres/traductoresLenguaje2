@@ -423,8 +423,8 @@ static void parseStatements(const std::vector<Node>& statements, DataType functi
 
 static void parseIfStatement(const std::shared_ptr<NodeIfStatement>& ifStatement, DataType functionType)
 {
-	auto nodeCondition = std::static_pointer_cast<NodeCondition>(ifStatement->condition);
-	auto conditionValue = parseExpression(nodeCondition->condition);
+	auto nodeExpression = std::static_pointer_cast<NodeExpression>(ifStatement->expression);
+	auto conditionValue = parseExpression(nodeExpression);
 	std::cout << conditionValue.value << '\n';
 
 	symbolTable.push_back(std::unordered_map<std::string, SymbolInfo>());

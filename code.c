@@ -1,6 +1,11 @@
 int suma(int a[5], int b)
 {
-	a[0] = 123;
+	if (a == 0)
+	{
+
+	}
+
+	int l = (2 > a);
 
 	return 0;
 }
