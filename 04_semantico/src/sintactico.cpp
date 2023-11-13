@@ -103,15 +103,25 @@ NodeIfStatement::NodeIfStatement(unsigned int line, Node expression, std::vector
 NodeStatement::NodeStatement(unsigned int line, Node statement)
 : ASTNode{ASTNode::Type::Statement, line}, statement(statement) {}
 
-NodeFunction::NodeFunction(unsigned int line,
+NodeFunctionDeclaration::NodeFunctionDeclaration(
+	unsigned int line,
+	Node datatype,
+	Node identifier,
+	Node parameters
+)
+: ASTNode{ASTNode::Type::FunctionDeclaration, line}, datatype(datatype), identifier(identifier), parameters(parameters) {}
+
+NodeFunction::NodeFunction(
+	unsigned int line,
 	Node datatype,
 	Node identifier,
 	Node parameters,
-	std::vector<Node> statements
+	std::vector<Node> statements,
+	std::shared_ptr<NodeFunctionDeclaration> declaration
 )
-: ASTNode{ASTNode::Type::Function, line}, datatype(datatype), identifier(identifier), parameters(parameters), statements(statements) {}
+: ASTNode{ASTNode::Type::Function, line}, datatype(datatype), identifier(identifier), parameters(parameters), statements(statements), declaration(declaration) {}
 
-NodeProgram::NodeProgram(std::vector<std::shared_ptr<NodeFunction>> functions)
+NodeProgram::NodeProgram(std::vector<Node> functions)
 : ASTNode{ASTNode::Type::Program, 0}, functions(functions) {}
 
 Parser::Parser(const std::vector<Token>& tokens)
@@ -125,7 +135,7 @@ void Parser::notEnd()
 
 std::shared_ptr<NodeProgram> Parser::parseProgram()
 {
-	std::vector<std::shared_ptr<NodeFunction>> functions;
+	std::vector<Node> functions;
 	while (index < tokens.size())
 		functions.push_back(parseFunction());
 
@@ -545,7 +555,7 @@ std::shared_ptr<NodeStatement> Parser::parseStatement()
 		throw ErrorCode(tokens[index].line, "Se esperaba un statement (Declaracion, Asignacion, If, Return)");
 }
 
-std::shared_ptr<NodeFunction> Parser::parseFunction()
+Node Parser::parseFunction()
 {
 	Token t;
 
@@ -562,6 +572,11 @@ std::shared_ptr<NodeFunction> Parser::parseFunction()
 	if (t.type != Token::Type::ParenthesisClose)
 		throw ErrorCode(parameters->lineNumber, "Se esperaba parentesis de cierre");
 
+	t = getNextToken();
+	if (t.type == Token::Type::Semicolon)
+		return std::make_shared<NodeFunctionDeclaration>(t.line, dataType, identifier, parameters);
+	index--;
+
 	/******/
 	std::vector<Node> statements;
 
@@ -574,7 +589,7 @@ std::shared_ptr<NodeFunction> Parser::parseFunction()
 	if (tokens[index].type == Token::Type::BraceClose)
 	{
 		index++; // Saltar el }
-		return std::make_shared<NodeFunction>(t.line, dataType, identifier, parameters, statements);
+		return std::make_shared<NodeFunction>(t.line, dataType, identifier, parameters, statements, nullptr);
 	}
 	// else
 	// 	throw std::runtime_error(std::format("Se esperaba corchete de cierre.\n\tLinea: {:d}\n", tokens[index].line));
@@ -588,7 +603,7 @@ std::shared_ptr<NodeFunction> Parser::parseFunction()
 		if (tokens[index].type == Token::Type::BraceClose)
 		{
 			index++; // Saltar el }
-			return std::make_shared<NodeFunction>(statement->lineNumber, dataType, identifier, parameters, statements);
+			return std::make_shared<NodeFunction>(statement->lineNumber, dataType, identifier, parameters, statements, nullptr);
 		}
 		else
 			continue;

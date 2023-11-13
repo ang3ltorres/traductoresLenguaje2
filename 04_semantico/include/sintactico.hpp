@@ -12,6 +12,7 @@ struct ASTNode
 	enum class Type : int
 	{
 		Program = 0,
+		FunctionDeclaration,
 		Function,
 		Statement,
 		IfStatement,
@@ -211,25 +212,45 @@ struct NodeStatement : public ASTNode
 	Node statement;
 };
 
+struct NodeFunctionDeclaration : public ASTNode
+{
+	NodeFunctionDeclaration(
+		unsigned int line,
+		Node datatype,
+		Node identifier,
+		Node parameters
+	);
+
+	Node datatype;
+	Node identifier;
+	Node parameters;
+};
+
 struct NodeFunction : public ASTNode
 {
-	NodeFunction(unsigned int line,
+	NodeFunction(
+		unsigned int line,
 		Node datatype,
 		Node identifier,
 		Node parameters,
-		std::vector<Node> statements
+		std::vector<Node> statements,
+		std::shared_ptr<NodeFunctionDeclaration> declaration
 	);
 
 	Node datatype;
 	Node identifier;
 	Node parameters;
 	std::vector<Node> statements;
+	std::shared_ptr<NodeFunctionDeclaration> declaration;
 };
 
 struct NodeProgram : public ASTNode
 {
-	NodeProgram(std::vector<std::shared_ptr<NodeFunction>> functions);
-	std::vector<std::shared_ptr<NodeFunction>> functions;
+	// FunctionDeclaration / Function
+	NodeProgram(std::vector<Node> functions);
+
+	// FunctionDeclaration / Function
+	std::vector<Node> functions;
 };
 
 class Parser
@@ -260,5 +281,7 @@ public:
 	Node parseCondition();
 	Node parseIfStatement();
 	std::shared_ptr<NodeStatement> parseStatement();
-	std::shared_ptr<NodeFunction> parseFunction();
+	
+	// FunctionDeclaration / Function
+	Node parseFunction();
 };

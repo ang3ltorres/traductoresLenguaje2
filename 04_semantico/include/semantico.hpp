@@ -40,8 +40,14 @@ struct SymbolInfo
 	unsigned int line;
 	DataType type;
 	SymbolType symbolType;
+
+	// ARRAY
 	std::vector<Value> values;
 	bool isArray;
+
+	// FUNCTION
+	bool isFunction;
+	std::vector<NodeArgument> parameters; // Parameters
 };
 
 void semanticAnalysis(const std::shared_ptr<NodeProgram>& program);

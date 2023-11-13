@@ -114,6 +114,7 @@ static void parseAssignment(const std::shared_ptr<NodeAssignment>& node);
 static void parseDeclaration(const std::shared_ptr<NodeDeclaration>& node);
 static void parseIfStatement(const std::shared_ptr<NodeIfStatement>& ifStatement, DataType functionType);
 static void parseStatements(const std::vector<Node>& statements, DataType functionType);
+static void parseParameters(const std::shared_ptr<NodeParamaters> parameters);
 ///
 
 static Value parseFactor(const Node& node)
@@ -363,7 +364,9 @@ static void parseDeclaration(const std::shared_ptr<NodeDeclaration>& node)
 			type,
 			SymbolInfo::SymbolType::Declaration,
 			values,
-			!(node->size == -1)
+			!(node->size == -1),
+			false,
+			std::vector<NodeArgument>()
 		};
 	}
 	else
@@ -385,7 +388,9 @@ static void parseDeclaration(const std::shared_ptr<NodeDeclaration>& node)
 			type,
 			SymbolInfo::SymbolType::DeclarationInnitialization,
 			std::vector<Value>(1, value),
-			false
+			false,
+			false,
+			std::vector<NodeArgument>()
 		};
 
 	}
@@ -441,51 +446,100 @@ static void parseIfStatement(const std::shared_ptr<NodeIfStatement>& ifStatement
 	symbolTable.pop_back();
 }
 
+static void parseParameters(const std::shared_ptr<NodeParamaters> parameters)
+{
+	for (const auto& i : parameters->args)
+	{
+		auto argument = std::static_pointer_cast<NodeArgument>(i);
+		auto id = std::static_pointer_cast<NodeIdentifier>(argument->identifier);
+		auto type = std::static_pointer_cast<NodeDataType>(argument->dataType)->dataType;
+
+		if (symbolTable.back().find(id->name) == symbolTable.back().end())
+		{
+			if (argument->size == 0)
+				throw ErrorCode(argument->lineNumber, "No es posible declarar un arreglo vacio");
+
+			std::vector<Value> values((argument->size == -1 ? 1 : argument->size), Value{false, type == DataType::Float, 0.0f});
+
+			symbolTable.back()[id->name] = SymbolInfo
+			{
+				0,
+				id->lineNumber,
+				type,
+				SymbolInfo::SymbolType::Argument,
+				values,
+				!(argument->size == -1),
+				false,
+				std::vector<NodeArgument>()
+			};
+		}
+		else
+			throw ErrorCode(id->lineNumber, std::format("Redefinicion del parametro \"{}\"", id->name));
+	}
+}
+
 void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 {
 	// Tablas de simbolos, el index representa el scopeLevel - 1
+	symbolTable.push_back(std::unordered_map<std::string, SymbolInfo>());
 
-	for (const std::shared_ptr<NodeFunction>& function : program->functions)
+	for (const Node& functionNode : program->functions)
 	{
-		symbolTable.push_back(std::unordered_map<std::string, SymbolInfo>());
-
-		// Function type
-		DataType functionType = std::static_pointer_cast<NodeDataType>(function->datatype)->dataType;
-
-		// Parameters
-		auto nodeParameters = std::static_pointer_cast<NodeParamaters>(function->parameters);
-		for (const auto& i : nodeParameters->args)
+		if (functionNode->type == ASTNode::Type::FunctionDeclaration)
 		{
-			auto argument = std::static_pointer_cast<NodeArgument>(i);
-			auto id = std::static_pointer_cast<NodeIdentifier>(argument->identifier);
-			auto type = std::static_pointer_cast<NodeDataType>(argument->dataType)->dataType;
 
-			if (symbolTable.back().find(id->name) == symbolTable.back().end())
+			// (find = st.find(id)) != symbolTable.back().end()
+
+			auto functionDeclaration = std::static_pointer_cast<NodeFunctionDeclaration>(functionNode);
+
+			auto id = std::static_pointer_cast<NodeIdentifier>(functionDeclaration->identifier)->name;
+			auto find = symbolTable.front().find(id);
+
+			if (find != symbolTable.back().end())
+				throw ErrorCode(functionDeclaration->lineNumber, std::format("Redeclaracion de la funcion (Linea: {}) \"{}\"", find->second.line, id));
+
+			// Function type
+			DataType functionType = std::static_pointer_cast<NodeDataType>(functionDeclaration->datatype)->dataType;
+
+			// Parameters
+			auto nodeParameters = std::static_pointer_cast<NodeParamaters>(functionDeclaration->parameters);
+			symbolTable.push_back(std::unordered_map<std::string, SymbolInfo>());
+			parseParameters(nodeParameters);
+			symbolTable.pop_back();
+
+			std::vector<NodeArgument> args;
+			for (const auto& a : nodeParameters->args)
 			{
-				if (argument->size == 0)
-					throw ErrorCode(argument->lineNumber, "No es posible declarar un arreglo vacio");
-
-				std::vector<Value> values((argument->size == -1 ? 1 : argument->size), Value{false, type == DataType::Float, 0.0f});
-
-				std::cout << "SIZE: " << argument->size << "\n";
-
-				symbolTable.back()[id->name] = SymbolInfo
-				{
-					0,
-					id->lineNumber,
-					type,
-					SymbolInfo::SymbolType::Argument,
-					values,
-					!(argument->size == -1)
-				};
+				auto argument = std::static_pointer_cast<NodeArgument>(a);
+				args.push_back(*argument);
 			}
-			else
-				throw ErrorCode(id->lineNumber, std::format("Redefinicion del parametro \"{}\"", id->name));
+
+			symbolTable.back()[id] = SymbolInfo
+			{
+				0,
+				functionDeclaration->lineNumber,
+				functionType,
+				SymbolInfo::SymbolType::Argument,
+				std::vector<Value>(),
+				false,
+				true,
+				args
+			};
 		}
+		else if (functionNode->type == ASTNode::Type::Function)
+		{
+			auto function = std::static_pointer_cast<NodeFunction>(functionNode);
 
-		// Statements
-		parseStatements(function->statements, functionType);
+			// Function type
+			DataType functionType = std::static_pointer_cast<NodeDataType>(function->datatype)->dataType;
 
-		symbolTable.pop_back();
+			// Parameters
+			auto nodeParameters = std::static_pointer_cast<NodeParamaters>(function->parameters);
+			parseParameters(nodeParameters);
+
+			// Statements
+			parseStatements(function->statements, functionType);
+		}
 	}
+	symbolTable.pop_back();
 }

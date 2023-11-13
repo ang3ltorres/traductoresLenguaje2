@@ -1,4 +1,5 @@
-<program>                   -> <function> | <function> <program>
+<program>                   -> ε | <function> | <function> <program> | <functionDeclaration> | <functionDeclaration> <program>
+<functionDeclaration>       -> <dataType> <identifier> ( <parameters> ) ;
 <function>                  -> <dataType> <identifier> ( <parameters> ) { <statement>* }
 <statement>                 -> <declaration> | <assignment> | <ifStatement> | <returnStatement>
 <ifStatement>               -> if ( <condition> ) { <statement>* } | if ( <condition> ) { <statement>* } else { <statement>* }
