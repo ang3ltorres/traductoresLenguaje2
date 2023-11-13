@@ -137,6 +137,8 @@ static Value parseFactor(const Node& node)
 			}
 			if (!found) throw ErrorCode(node->lineNumber, std::format("La variable \"{}\" no esta declarada previamente", id->name));
 
+			if (find->second.isArray) throw ErrorCode(node->lineNumber, std::format("La variable \"{}\" es un arreglo", id->name));
+
 			return find->second.values.front();
 		}
 
@@ -159,6 +161,7 @@ static Value parseFactor(const Node& node)
 				}
 			}
 			if (!found) throw ErrorCode(node->lineNumber, std::format("La variable \"{}\" no esta declarada previamente", id->name));
+			if (!find->second.isArray) throw ErrorCode(node->lineNumber, std::format("La variable \"{}\" no es un arreglo", id->name));
 
 			// Evaluate
 			auto index = parseExpression(expIndex);
@@ -297,6 +300,7 @@ static void parseAssignment(const std::shared_ptr<NodeAssignment>& node)
 	}
 
 	if (!found) throw ErrorCode(node->lineNumber, std::format("La variable \"{}\" no esta declarada previamente", id));
+	if (!find->second.isArray && node->expIndex) throw ErrorCode(node->lineNumber, std::format("La variable \"{}\" no es un arreglo", id));
 	
 	// Evaluate expression, Change value
 	auto newExpression = parseExpression(std::static_pointer_cast<NodeExpression>(node->exp));
