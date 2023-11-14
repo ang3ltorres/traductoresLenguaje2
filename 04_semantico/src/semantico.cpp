@@ -500,42 +500,50 @@ void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 	{
 		if (functionNode->type == ASTNode::Type::FunctionDeclaration)
 		{
-			auto functionDeclaration = std::static_pointer_cast<NodeFunctionDeclaration>(functionNode);
-
-			auto id = std::static_pointer_cast<NodeIdentifier>(functionDeclaration->identifier)->name;
-			auto find = symbolTable.front().find(id);
-
-			if (find != symbolTable.back().end())
-				throw ErrorCode(functionDeclaration->lineNumber, std::format("Redeclaracion de la funcion (Linea: {}) \"{}\"", find->second.line, id));
-
-			// Function type
-			DataType functionType = std::static_pointer_cast<NodeDataType>(functionDeclaration->datatype)->dataType;
-
-			// Parameters
-			auto nodeParameters = std::static_pointer_cast<NodeParamaters>(functionDeclaration->parameters);
-			symbolTable.push_back(std::unordered_map<std::string, SymbolInfo>());
-			parseParameters(nodeParameters);
-			symbolTable.pop_back();
-
-			std::vector<NodeArgument> args;
-			for (const auto& a : nodeParameters->args)
+			try
 			{
-				auto argument = std::static_pointer_cast<NodeArgument>(a);
-				args.push_back(*argument);
+				auto functionDeclaration = std::static_pointer_cast<NodeFunctionDeclaration>(functionNode);
+
+				auto id = std::static_pointer_cast<NodeIdentifier>(functionDeclaration->identifier)->name;
+				auto find = symbolTable.front().find(id);
+
+				if (find != symbolTable.back().end())
+					throw ErrorCode(functionDeclaration->lineNumber, std::format("Redeclaracion de la funcion (Linea: {}) \"{}\"", find->second.line, id));
+
+				// Function type
+				DataType functionType = std::static_pointer_cast<NodeDataType>(functionDeclaration->datatype)->dataType;
+
+				// Parameters
+				auto nodeParameters = std::static_pointer_cast<NodeParamaters>(functionDeclaration->parameters);
+				symbolTable.push_back(std::unordered_map<std::string, SymbolInfo>());
+				parseParameters(nodeParameters);
+				symbolTable.pop_back();
+
+				std::vector<NodeArgument> args;
+				for (const auto& a : nodeParameters->args)
+				{
+					auto argument = std::static_pointer_cast<NodeArgument>(a);
+					args.push_back(*argument);
+				}
+
+				symbolTable.back()[id] = SymbolInfo
+				{
+					0,
+					functionDeclaration->lineNumber,
+					functionType,
+					SymbolInfo::SymbolType::Argument,
+					std::vector<Value>(),
+					false,
+					SymbolInfo::FunctionType::Declaration,
+					args,
+					std::vector<Node>(),
+				};
 			}
-
-			symbolTable.back()[id] = SymbolInfo
+			catch (const ErrorCode& e)
 			{
-				0,
-				functionDeclaration->lineNumber,
-				functionType,
-				SymbolInfo::SymbolType::Argument,
-				std::vector<Value>(),
-				false,
-				SymbolInfo::FunctionType::Declaration,
-				args,
-				std::vector<Node>(),
-			};
+				semanticErrors.push_back(e);
+				continue;
+			}
 		}
 		else if (functionNode->type == ASTNode::Type::Function)
 		{
@@ -578,28 +586,35 @@ void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 
 			if (find != symbolTable.back().end())
 			{
-				if (find->second.functionType == SymbolInfo::FunctionType::Declaration)
+				try
 				{
-					// Check same parameters TODO
-					if (find->second.parameters.size() != args.size())
-						throw ErrorCode(function->lineNumber, std::format("Los parametros de la funcion (Linea: {}) \"{}\" No coindicen", find->second.line, id));
-
-					for (unsigned int i = 0; i < args.size(); i++)
+					if (find->second.functionType == SymbolInfo::FunctionType::Declaration)
 					{
-						auto dt1 = std::static_pointer_cast<NodeDataType>(find->second.parameters[i].dataType)->dataType;
-						auto dt2 = std::static_pointer_cast<NodeDataType>(args[i].dataType)->dataType;
-						
-						auto id1 = std::static_pointer_cast<NodeIdentifier>(find->second.parameters[i].identifier)->name;
-						auto id2 = std::static_pointer_cast<NodeIdentifier>(args[i].identifier)->name;
-
-						if (dt1 != dt2 || id1 != id2)
+						// Check same parameters TODO
+						if (find->second.parameters.size() != args.size())
 							throw ErrorCode(function->lineNumber, std::format("Los parametros de la funcion (Linea: {}) \"{}\" No coindicen", find->second.line, id));
-					}
 
-					find->second = value;
+						for (unsigned int i = 0; i < args.size(); i++)
+						{
+							auto dt1 = std::static_pointer_cast<NodeDataType>(find->second.parameters[i].dataType)->dataType;
+							auto dt2 = std::static_pointer_cast<NodeDataType>(args[i].dataType)->dataType;
+							
+							auto id1 = std::static_pointer_cast<NodeIdentifier>(find->second.parameters[i].identifier)->name;
+							auto id2 = std::static_pointer_cast<NodeIdentifier>(args[i].identifier)->name;
+
+							if (dt1 != dt2 || id1 != id2)
+								throw ErrorCode(function->lineNumber, std::format("Los parametros de la funcion (Linea: {}) \"{}\" No coindicen", find->second.line, id));
+						}
+
+						find->second = value;
+					}
+					else if (find->second.functionType == SymbolInfo::FunctionType::Implementation)
+						throw ErrorCode(function->lineNumber, std::format("Reimplementacion de la funcion (Linea: {}) \"{}\"", find->second.line, id));
 				}
-				else if (find->second.functionType == SymbolInfo::FunctionType::Implementation)
-					throw ErrorCode(function->lineNumber, std::format("Reimplementacion de la funcion (Linea: {}) \"{}\"", find->second.line, id));
+				catch (const ErrorCode& e)
+				{
+					semanticErrors.push_back(e);
+				}
 			}
 			else
 				symbolTable.back()[id] = value;
