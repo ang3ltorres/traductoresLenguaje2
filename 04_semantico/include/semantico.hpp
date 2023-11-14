@@ -6,6 +6,8 @@
 #include "sintactico.hpp"
 #include "generic.hpp"
 
+extern std::vector<ErrorCode> semanticErrors;
+
 struct Value
 {
 	bool valid;

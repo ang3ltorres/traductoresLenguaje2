@@ -4,6 +4,8 @@
 #include <format>
 #include <cmath>
 
+std::vector<ErrorCode> semanticErrors;
+
 Value Value::operator+(const Value& other)
 {
 	return Value
@@ -402,32 +404,40 @@ static void parseStatements(const std::vector<Node>& statements, DataType functi
 {
 	for (const auto& i : statements)
 	{
-		// Un-wrap statement
-		auto statement = std::static_pointer_cast<NodeStatement>(i);
+		try
+		{
+			// Un-wrap statement
+			auto statement = std::static_pointer_cast<NodeStatement>(i);
 
-		if (statement->statement->type == ASTNode::Type::Declaration)
-		{
-			auto declaration = std::static_pointer_cast<NodeDeclaration>(statement->statement);
-			parseDeclaration(declaration);
-		}
-		else if (statement->statement->type == ASTNode::Type::Assignament)
-		{
-			auto assignment = std::static_pointer_cast<NodeAssignment>(statement->statement);
-			parseAssignment(assignment);
-		}
-		else if (statement->statement->type == ASTNode::Type::ReturnStatement)
-		{
-			auto returnStatement = std::static_pointer_cast<NodeReturnStatement>(statement->statement);
-			auto nodeExpression = std::static_pointer_cast<NodeExpression>(returnStatement->expression);
-			auto expression = parseExpression(nodeExpression);
+			if (statement->statement->type == ASTNode::Type::Declaration)
+			{
+				auto declaration = std::static_pointer_cast<NodeDeclaration>(statement->statement);
+				parseDeclaration(declaration);
+			}
+			else if (statement->statement->type == ASTNode::Type::Assignament)
+			{
+				auto assignment = std::static_pointer_cast<NodeAssignment>(statement->statement);
+				parseAssignment(assignment);
+			}
+			else if (statement->statement->type == ASTNode::Type::ReturnStatement)
+			{
+				auto returnStatement = std::static_pointer_cast<NodeReturnStatement>(statement->statement);
+				auto nodeExpression = std::static_pointer_cast<NodeExpression>(returnStatement->expression);
+				auto expression = parseExpression(nodeExpression);
 
-			if ((expression.isFloat && functionType == DataType::Int) || (!expression.isFloat && functionType == DataType::Float))
-				throw ErrorCode(nodeExpression->lineNumber, std::format("Tipo de dato de retorno incorrecto"));
+				if ((expression.isFloat && functionType == DataType::Int) || (!expression.isFloat && functionType == DataType::Float))
+					throw ErrorCode(nodeExpression->lineNumber, std::format("Tipo de dato de retorno incorrecto"));
+			}
+			else if (statement->statement->type == ASTNode::Type::IfStatement)
+			{
+				auto ifStatement = std::static_pointer_cast<NodeIfStatement>(statement->statement);
+				parseIfStatement(ifStatement, functionType);
+			}
 		}
-		else if (statement->statement->type == ASTNode::Type::IfStatement)
+		catch (const ErrorCode& e)
 		{
-			auto ifStatement = std::static_pointer_cast<NodeIfStatement>(statement->statement);
-			parseIfStatement(ifStatement, functionType);
+			semanticErrors.push_back(e);
+			continue;
 		}
 	}
 }

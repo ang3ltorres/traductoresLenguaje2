@@ -103,7 +103,11 @@
 			std::shared_ptr<NodeProgram> program = parser.parseProgram();
 			std::cout << "El programa no contiene errores sintacticos !!\n";
 			semanticAnalysis(program);
-			std::cout << "El programa no contiene errores semanticos !!\n";
+			if (semanticErrors.size())
+				for (const auto& e : semanticErrors)
+					std::cerr << e.what() << std::endl;
+			else
+				std::cout << "El programa no contiene errores semanticos !!\n";
 		}
 		catch (const ErrorCode& e)
 		{
