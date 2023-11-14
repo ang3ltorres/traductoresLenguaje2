@@ -576,13 +576,13 @@ void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 
 					for (unsigned int i = 0; i < args.size(); i++)
 					{
-						auto dt1 = std::static_pointer_cast<NodeDataType>(find->second.parameters[i].dataType);
-						auto dt2 = std::static_pointer_cast<NodeDataType>(args[i].dataType);
+						auto dt1 = std::static_pointer_cast<NodeDataType>(find->second.parameters[i].dataType)->dataType;
+						auto dt2 = std::static_pointer_cast<NodeDataType>(args[i].dataType)->dataType;
 						
 						auto id1 = std::static_pointer_cast<NodeIdentifier>(find->second.parameters[i].identifier)->name;
 						auto id2 = std::static_pointer_cast<NodeIdentifier>(args[i].identifier)->name;
 
-						if (dt1->dataType != dt2->dataType || id1 != id2)
+						if (dt1 != dt2 || id1 != id2)
 							throw ErrorCode(function->lineNumber, std::format("Los parametros de la funcion (Linea: {}) \"{}\" No coindicen", find->second.line, id));
 					}
 
