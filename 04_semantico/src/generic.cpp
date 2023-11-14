@@ -20,7 +20,7 @@ std::tuple
 <
 	std::vector<Token>,
 	ErrorCode,
-	ErrorCode
+	std::vector<ErrorCode>
 >
 parse(const std::string& code)
 {
@@ -31,23 +31,13 @@ parse(const std::string& code)
 		Parser parser(tokens);
 		std::shared_ptr<NodeProgram> program = parser.parseProgram();
 		
-		try
-		{
-			semanticAnalysis(program);
-			return std::make_tuple(
-				tokens,
-				ErrorCode{0, "El programa no contiene errores sintacticos!! :D"},
-				ErrorCode{0, "El programa no contiene errores semanticos!! :D"}
-			);
-		}
-		catch (const ErrorCode& e)
-		{
-			return std::make_tuple(
-				tokens,
-				ErrorCode{0, "El programa no contiene errores sintacticos!! :D"},
-				e
-			);
-		}
+		semanticAnalysis(program);
+		
+		return std::make_tuple(
+			tokens,
+			ErrorCode{0, "El programa no contiene errores sintacticos!! :D"},
+			(semanticErrors.size()) ? semanticErrors : std::vector<ErrorCode>(1, ErrorCode{0, "El programa no contiene errores semanticos!! :D"})
+		);
 
 		semanticAnalysis(program);
 	}
@@ -56,7 +46,7 @@ parse(const std::string& code)
 		return std::make_tuple(
 			tokens,
 			e,
-			ErrorCode{0, "NULL"}
+			std::vector<ErrorCode>(1, ErrorCode{0, "NULL"})
 		);
 	}
 

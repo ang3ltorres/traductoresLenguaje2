@@ -38,13 +38,13 @@ public:
 /* SINTACTICO */
 	// ErrorCode
 /* SEMANTICO */
-	// ErrorCode
+	// std::vector<ErrorCode>
 
 std::tuple
 <
 	std::vector<Token>,
 	ErrorCode,
-	ErrorCode
+	std::vector<ErrorCode>
 >
 parse(const std::string& code);
 

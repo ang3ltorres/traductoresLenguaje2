@@ -493,6 +493,8 @@ static void parseParameters(const std::shared_ptr<NodeParamaters> parameters)
 
 void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 {
+	semanticErrors.clear();
+
 	// Tablas de simbolos, el index representa el scopeLevel - 1
 	symbolTable.push_back(std::unordered_map<std::string, SymbolInfo>());
 

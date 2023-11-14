@@ -115,16 +115,20 @@ class MainWindow(QMainWindow):
 			self.errorsBoxSintactic.setPlainText(error_sintactic.what())
 			self.highlight_line(error_sintactic.line, QColor("red"))
 
-		# errorsBoxSintactic
+		# errorsBoxSemantic
+		for i in error_semantic:
+			print(i.what())
+
 		if (error_sintactic.line == 0):
 			self.errorsBoxSemantic.clear()
 			self.highlight_clear()
 
-			if (error_semantic.line == 0):
-				self.errorsBoxSemantic.setPlainText(error_semantic.error_str)
+			if (error_semantic[0].line == 0):
+				self.errorsBoxSemantic.setPlainText(error_semantic[0].error_str)
 			else:
-				self.errorsBoxSemantic.setPlainText(error_semantic.what())
-				self.highlight_line(error_semantic.line, QColor("red"))
+				for i in error_semantic:
+					self.errorsBoxSemantic.insertPlainText(i.what())
+					self.highlight_line(i.line, QColor("red"))
 
 def main():
 	app = QApplication(sys.argv)
