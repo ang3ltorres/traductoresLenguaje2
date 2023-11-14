@@ -569,7 +569,25 @@ void semanticAnalysis(const std::shared_ptr<NodeProgram>& program)
 			if (find != symbolTable.back().end())
 			{
 				if (find->second.functionType == SymbolInfo::FunctionType::Declaration)
+				{
+					// Check same parameters TODO
+					if (find->second.parameters.size() != args.size())
+						throw ErrorCode(function->lineNumber, std::format("Los parametros de la funcion (Linea: {}) \"{}\" No coindicen", find->second.line, id));
+
+					for (unsigned int i = 0; i < args.size(); i++)
+					{
+						auto dt1 = std::static_pointer_cast<NodeDataType>(find->second.parameters[i].dataType);
+						auto dt2 = std::static_pointer_cast<NodeDataType>(args[i].dataType);
+						
+						auto id1 = std::static_pointer_cast<NodeIdentifier>(find->second.parameters[i].identifier)->name;
+						auto id2 = std::static_pointer_cast<NodeIdentifier>(args[i].identifier)->name;
+
+						if (dt1->dataType != dt2->dataType || id1 != id2)
+							throw ErrorCode(function->lineNumber, std::format("Los parametros de la funcion (Linea: {}) \"{}\" No coindicen", find->second.line, id));
+					}
+
 					find->second = value;
+				}
 				else if (find->second.functionType == SymbolInfo::FunctionType::Implementation)
 					throw ErrorCode(function->lineNumber, std::format("Reimplementacion de la funcion (Linea: {}) \"{}\"", find->second.line, id));
 			}
