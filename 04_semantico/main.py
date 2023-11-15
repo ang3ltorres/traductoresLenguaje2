@@ -24,7 +24,12 @@ class MainWindow(QMainWindow):
 		file_menu = self.menuBar().addMenu('Archivo')
 		file_menu.addAction(open_action_file)
 
-		layout = QVBoxLayout(self.w)
+		# Main layout
+		main_layout = QHBoxLayout(self.w)
+
+		# Left pane
+		left_pane = QWidget()
+		layout_left = QVBoxLayout(left_pane)
 
 		self.fontConsolas = QFont()
 		self.fontConsolas.setFamily("Consolas")
@@ -38,6 +43,14 @@ class MainWindow(QMainWindow):
 
 		self.boton = QPushButton("Analizar", self.w)
 		self.boton.clicked.connect(self.check)
+
+		layout_left.addWidget(QLabel("Código"))
+		layout_left.addWidget(self.codeBox)
+		layout_left.addWidget(self.boton)
+
+		# Right pane
+		right_pane = QWidget()
+		layout_right = QVBoxLayout(right_pane)
 
 		self.tabla = QTableWidget(self.w)
 		self.tabla.setColumnCount(3)
@@ -58,11 +71,19 @@ class MainWindow(QMainWindow):
 		self.errorsBoxSemantic.setFont(self.fontConsolas)
 		self.errorsBoxSemantic.setReadOnly(True)
 
-		layout.addWidget(self.codeBox)
-		layout.addWidget(self.boton)
-		layout.addWidget(self.tabla)
-		layout.addWidget(self.errorsBoxSintactic)
-		layout.addWidget(self.errorsBoxSemantic)
+		layout_right.addWidget(QLabel("Tabla de Tokens"))
+		layout_right.addWidget(self.tabla)
+		layout_right.addWidget(QLabel("Errores Sintácticos"))
+		layout_right.addWidget(self.errorsBoxSintactic)
+		layout_right.addWidget(QLabel("Errores Semánticos"))
+		layout_right.addWidget(self.errorsBoxSemantic)
+
+		# Splitter for resizable panes
+		splitter = QSplitter()
+		splitter.addWidget(left_pane)
+		splitter.addWidget(right_pane)
+
+		main_layout.addWidget(splitter)
 
 	def open_file(self):
 		file_name, _ = QFileDialog.getOpenFileName(self, 'Abrir archivo', '', 'Archivos de código C (*.c)')
