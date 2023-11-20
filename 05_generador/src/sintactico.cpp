@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-Sintactico::Sintactico(char *fuente, int traza)
+Sintactico::Sintactico(const char *fuente, int traza)
 : lexico(fuente, traza), generaCodigo("salida.txt")
 //se inicializa el constructor de la clase léxico
 {
@@ -76,6 +76,18 @@ void Sintactico::otra_sentencia()
 	if (token == ';')
 	{
 		sentencia();
+
+		// Verificar si el siguiente caracter es }
+		fseek(lexico.entrada, 2, SEEK_CUR);
+		char siguienteCaracter = fgetc(lexico.entrada);
+		fseek(lexico.entrada, -3, SEEK_CUR);
+
+		if (siguienteCaracter == '}')
+		{
+			fseek(lexico.entrada, 1, SEEK_CUR);
+			return;
+		}
+
 		otra_sentencia();
 	}
 	else
