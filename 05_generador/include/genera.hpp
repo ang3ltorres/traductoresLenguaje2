@@ -10,7 +10,7 @@ class GeneraCodigo
 	FILE *salida;
 
 public:
-	GeneraCodigo(char *unNombreFichero);
+	GeneraCodigo(const char *unNombreFichero);
 	~GeneraCodigo();
 
 	void code();

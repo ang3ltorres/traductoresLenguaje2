@@ -1,11 +1,11 @@
 #include "genera.hpp"
 
-GeneraCodigo::GeneraCodigo(char *unNombreFichero)
+GeneraCodigo::GeneraCodigo(const char *unNombreFichero)
 {
-	if ((salida = fopen(unNombreFichero,"w")) == NULL)
+	if ((salida = fopen(unNombreFichero, "w")) == NULL)
 	{
 		std::cout << "No se puede crear el fichero" << unNombreFichero << '\n';
-		exit(-3);
+		exit(EXIT_FAILURE);
 	}
 }
 

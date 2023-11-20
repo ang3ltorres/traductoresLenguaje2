@@ -3,7 +3,7 @@
 #include <iostream>
 
 Sintactico::Sintactico(char *fuente, int traza)
- : lexico(fuente, traza)
+: lexico(fuente, traza), generaCodigo("salida.txt")
 //se inicializa el constructor de la clase léxico
 {
 	if (lexico.existeTraza())
@@ -12,7 +12,7 @@ Sintactico::Sintactico(char *fuente, int traza)
 	programa();
 }
 
-Sintactico::~Sintactico(void)
+Sintactico::~Sintactico()
 {
 	if (lexico.existeTraza())
 	{
@@ -21,7 +21,7 @@ Sintactico::~Sintactico(void)
 	}
 }
 
-void Sintactico::programa(void)
+void Sintactico::programa()
 {
 	char token;
 
@@ -30,7 +30,10 @@ void Sintactico::programa(void)
 
 	token = lexico.siguienteToken();
 	if (token=='M')
+	{
 		std::cout << "M";
+		generaCodigo.code();
+	}
 	else
 		errores(8);
 
@@ -43,13 +46,16 @@ void Sintactico::programa(void)
 	token = lexico.siguienteToken();
 
 	if (token == '}')
+	{
 		std::cout << "}";
+		generaCodigo.end();
+	}
 	else
 		errores(2);
 }
 
 
-void Sintactico::bloque(void)
+void Sintactico::bloque()
 {
 	if (lexico.existeTraza())
 		std::cout << "ANALISIS SINTACTICO: <BLOQUE>\n";
@@ -58,7 +64,7 @@ void Sintactico::bloque(void)
 	otra_sentencia();
 }
 
-void Sintactico::otra_sentencia(void)
+void Sintactico::otra_sentencia()
 {
 	char token;
 
@@ -76,8 +82,7 @@ void Sintactico::otra_sentencia(void)
 		lexico.devuelveToken(token); //vacio
 }
 
-
-void Sintactico::sentencia(void)
+void Sintactico::sentencia()
 {
 	char token;
 
@@ -109,16 +114,20 @@ void Sintactico::asignacion()
 
 	variable();
 
+	generaCodigo.load();
+
 	token = lexico.siguienteToken();
 
 	if (token != '=')
 		errores(3);
 
 	expresion();
+
+	generaCodigo.store();
 }
 
 
-void Sintactico::variable(void)
+void Sintactico::variable()
 {
 	char token;
 
@@ -134,7 +143,7 @@ void Sintactico::variable(void)
 }
 
 
-void Sintactico::expresion(void)
+void Sintactico::expresion()
 {
 	if (lexico.existeTraza())
 		std::cout<<"ANALISIS SINTACTICO: <EXPRESION>\n";
@@ -144,7 +153,7 @@ void Sintactico::expresion(void)
 }
 
 
-void Sintactico::termino(void)
+void Sintactico::termino()
 {
 	if (lexico.existeTraza())
 		std::cout << "ANALISIS SINTACTICO: <TERMINO>\n";
@@ -153,7 +162,7 @@ void Sintactico::termino(void)
 	mas_factores();
 }
 
-void Sintactico::mas_terminos(void)
+void Sintactico::mas_terminos()
 {
 	char token;
 
@@ -176,7 +185,7 @@ void Sintactico::mas_terminos(void)
 		lexico.devuelveToken(token); // <vacio>
 }
 
-void Sintactico::factor(void)
+void Sintactico::factor()
 {
 	char token;
 
@@ -205,7 +214,7 @@ void Sintactico::factor(void)
 	}
 }
 void
-Sintactico::mas_factores(void)
+Sintactico::mas_factores()
 {
 	char token;
 
@@ -236,7 +245,7 @@ Sintactico::mas_factores(void)
 	}
 }
 
-void Sintactico::lectura(void)
+void Sintactico::lectura()
 {
 	char token;
 
@@ -245,11 +254,13 @@ void Sintactico::lectura(void)
 	if (lexico.existeTraza())
 		std::cout<<"ANALISIS SINTACTICO: <LECTURA> " << token << '\n';
 
-	if ((token<'a') || (token>'z'))
+	if ((token >= 'a') && (token <= 'z'))
+		generaCodigo.input(token);
+	else
 		errores(5);
 }
 
-void Sintactico::escritura(void)
+void Sintactico::escritura()
 {
 	char token;
 
@@ -258,11 +269,13 @@ void Sintactico::escritura(void)
 	if (lexico.existeTraza())
 		std::cout<<"ANALISIS SINTACTICO: <ESCRITURA> " << token << '\n';
 
-	if ((token<'a') || (token>'z'))
+	if ((token >= 'a') && (token <= 'z'))
+		generaCodigo.output(token);
+	else
 		errores(5);
 }
 
-void Sintactico::constante(void)
+void Sintactico::constante()
 {
 	char token;
 
@@ -271,8 +284,8 @@ void Sintactico::constante(void)
 
 	token = lexico.siguienteToken();
 
-	if ((token>='0') && (token<='9'))
-		std::cout<<token;
+	if ((token >= '0') && (token <= '9'))
+		generaCodigo.pushc(token);
 	else
 		errores(7);
 }

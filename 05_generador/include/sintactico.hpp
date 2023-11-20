@@ -1,5 +1,6 @@
 #pragma once
 #include "lexico.hpp"
+#include "genera.hpp"
 
 class Sintactico
 {
@@ -18,7 +19,9 @@ class Sintactico
 	void mas_factores(void);
 	void constante(void);
 	void errores (int codigo);
-	Lexico lexico; //objeto léxico miembro de la clase
+
+	Lexico lexico;
+	GeneraCodigo generaCodigo;
 
 public:
 	Sintactico(char *fuente, int traza);
