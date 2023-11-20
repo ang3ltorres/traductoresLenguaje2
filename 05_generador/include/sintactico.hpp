@@ -24,6 +24,6 @@ class Sintactico
 	GeneraCodigo generaCodigo;
 
 public:
-	Sintactico(char *fuente, int traza);
+	Sintactico(const char *fuente, int traza);
 	~Sintactico(void);
 };

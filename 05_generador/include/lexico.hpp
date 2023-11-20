@@ -4,6 +4,7 @@
 
 class Lexico
 {
+public:
 	char* nombreFichero;
 	FILE* entrada;
 	int n1;
@@ -11,7 +12,6 @@ class Lexico
 	char buffer[TAM_BUFFER];
 	int pBuffer;
 
-public:
 	Lexico(const char* nombreFichero, int traza = 0);
 	~Lexico();
 	char siguienteToken();
