@@ -1,6 +1,8 @@
 #include "sintactico.hpp"
 
 #include <iostream>
+#include <vector>
+#include <algorithm>
 
 Sintactico::Sintactico(const char *fuente, int traza)
 : lexico(fuente, traza), generaCodigo("salida.txt")
@@ -33,6 +35,23 @@ void Sintactico::programa()
 	{
 		std::cout << "M";
 		generaCodigo.code();
+
+		// Todas las variables usadas en el codigo hacerles PUSHA ('VAR')
+		std::vector<char> vars;
+		long punteroAnterior = ftell(lexico.entrada);
+		char c;
+		while ((c = fgetc(lexico.entrada)) != EOF)
+		{
+			if (islower(c))
+			{
+				if (std::find(vars.begin(), vars.end(), c) == vars.end())
+					vars.push_back(c);
+			}
+		}
+		fseek(lexico.entrada, punteroAnterior, SEEK_SET);
+
+		for (char i : vars)
+			generaCodigo.pusha(i);
 	}
 	else
 		errores(8);
@@ -126,12 +145,18 @@ void Sintactico::asignacion()
 
 	variable();
 
-	generaCodigo.load();
+	// generaCodigo.load();
 
 	token = lexico.siguienteToken();
 
 	if (token != '=')
 		errores(3);
+
+	// Obtener variable antes del =
+	// fseek(lexico.entrada, -3, SEEK_CUR);
+	// char var = fgetc(lexico.entrada);
+	// fseek(lexico.entrada, 2, SEEK_CUR);
+	// generaCodigo.pusha(var);
 
 	expresion();
 
@@ -149,7 +174,9 @@ void Sintactico::variable()
 	token = lexico.siguienteToken();
 
 	if ((token >= 'a') && (token <= 'z'))
+	{
 		std::cout << token;
+	}
 	else
 		errores(5);
 }
@@ -185,11 +212,19 @@ void Sintactico::mas_terminos()
 
 	if (token=='+')
 	{
+		generaCodigo.load();
+		generaCodigo.load();
+		generaCodigo.add();
+
 		termino();
 		mas_terminos();
 	}
 	else if (token =='-')
 	{
+		generaCodigo.load();
+		generaCodigo.load();
+		generaCodigo.neg();
+		generaCodigo.add();
 		termino();
 		mas_terminos();
 	}
@@ -238,16 +273,28 @@ Sintactico::mas_factores()
 	switch (token)
 	{
 		case '*':
+			generaCodigo.load();
+			generaCodigo.load();
+			generaCodigo.mul();
+
 			factor();
 			mas_factores();
 			break;
 
 		case '/':
+			generaCodigo.load();
+			generaCodigo.load();
+			generaCodigo.div();
+
 			factor();
 			mas_factores();
 			break;
 
 		case '%':
+			generaCodigo.load();
+			generaCodigo.load();
+			generaCodigo.mod();
+
 			factor();
 			mas_factores();
 			break;
@@ -267,7 +314,10 @@ void Sintactico::lectura()
 		std::cout<<"ANALISIS SINTACTICO: <LECTURA> " << token << '\n';
 
 	if ((token >= 'a') && (token <= 'z'))
+	{
 		generaCodigo.input(token);
+		generaCodigo.store();
+	}
 	else
 		errores(5);
 }

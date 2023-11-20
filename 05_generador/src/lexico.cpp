@@ -88,7 +88,7 @@ void Lexico::devuelveToken(char token)
 		buffer[pBuffer++] = token;
 
 		if (existeTraza())
-			std::cout << "Analizador lexico: Recibe en buffer el token" << token << '\n';			
+			std::cout << "Analizador lexico: Recibe en buffer el token " << token << '\n';			
 	}
 }
 
