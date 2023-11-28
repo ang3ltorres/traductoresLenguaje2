@@ -5,6 +5,8 @@
 
 #include "sintactico.hpp"
 
+#ifndef PYTHON_LIB
+
 int main()
 {
 	// std::cout << "Abriendo el archivo 'prueba.txt'...";
@@ -21,3 +23,24 @@ int main()
 
 	return 0;
 }
+
+#else
+
+#include <string>
+#include <fstream>
+#include <streambuf>
+
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+
+static void compile(const std::string& fileName)
+{
+	Sintactico sintactico(fileName.c_str(), 1);
+}
+
+PYBIND11_MODULE(generador, m)
+{
+	m.def("compile_code", &compile, "Obtener codigo assembly a partir de un codigo fuente");
+}
+
+#endif
